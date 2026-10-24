@@ -1,0 +1,8 @@
+# Runtime files created by the programs (regenerated automatically)
+status.json
+builder.json
+leds_off.flag
+airports.tmp
+
+__pycache__/
+*.pyc

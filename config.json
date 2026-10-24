@@ -1,0 +1,10 @@
+{
+  "brightness": 60,
+  "high_wind": true,
+  "lightning": true,
+  "map_on": true,
+  "night_brightness": 25,
+  "night_end": "06:00",
+  "night_mode": true,
+  "night_start": "22:00"
+}

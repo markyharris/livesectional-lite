@@ -1,0 +1,4 @@
+flask>=3.0
+# Raspberry Pi only (not needed anywhere else - the app falls back to a
+# console simulation when this library is absent):
+#   rpi_ws281x
