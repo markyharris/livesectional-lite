@@ -36,7 +36,10 @@ Where a command asks for your password, that's normal during setup.
 > Data flows one direction: wire to the strip's **input** end (usually
 > marked DIN, with arrows pointing away from it along the strip).
 
-**Software files** (you should have these five together):
+**Software files** — five files make the map run. You won't download
+them one by one: Step 3 clones the whole project folder from GitHub in
+one command (the clone also brings `README.md`, this guide, a second
+sample layout `airports-world50`, and a `.gitignore`). The five:
 
 | File | What it is |
 |---|---|
@@ -50,7 +53,8 @@ Three more files appear in the folder once things run — they're created
 by the programs, **not** downloads, and deleting them is harmless:
 `status.json` (the display's latest-fetch report, read by the web page),
 `builder.json` (the map builder's current position), and `leds_off.flag`
-(a momentary signal used while rebooting/shutting down).
+(a momentary signal used while rebooting/shutting down). The
+`.gitignore` in the clone tells Git to leave those three alone.
 
 ---
 
@@ -72,18 +76,36 @@ by the programs, **not** downloads, and deleting them is harmless:
 
 ---
 
-## Step 1 — Flash the Pi
+## Step 1 — Create the SD card (Raspberry Pi OS Lite)
 
-1. On your computer, install **Raspberry Pi Imager** (raspberrypi.com).
-2. Choose your Pi model, **Raspberry Pi OS (64-bit)**, and your SD card.
-3. When asked to apply OS customisation, say yes and set:
+This writes a fresh, current operating system to the card. **It erases
+the card completely** — use a card with nothing on it you need.
+
+1. On your computer, install **Raspberry Pi Imager** from
+   raspberrypi.com and put the microSD card in the computer.
+2. **Choose Device:** your Pi model.
+3. **Choose OS:** select **Raspberry Pi OS (other)**, then
+   **Raspberry Pi OS Lite (64-bit)**. Imager downloads the newest Lite
+   release each time, so you're current by construction. Lite has no
+   desktop — this map is a headless appliance, everything happens in
+   the terminal, and Lite boots faster and has less to update.
+4. **Choose Storage:** your SD card (double-check it's the card, not a
+   drive you care about).
+5. Click **Next**. When Imager offers **OS customisation**, choose
+   **Edit Settings** and set:
    - **Hostname:** `raspberrypi` (or anything you like)
    - **Username and password:** pick them, and **remember the username** —
      you'll see it in every terminal prompt. Write the password down.
-   - **Wi-Fi:** your network name and password (or use Ethernet)
-   - **Enable SSH** (under Services) if you want to run these commands
-     from your computer instead of a keyboard on the Pi.
-4. Write the card, put it in the Pi, power on, wait ~2 minutes.
+   - **Wi-Fi:** your network name and password (skip if you'll use
+     Ethernet)
+   - **Locale:** your **time zone** — the map's night window and the
+     admin page's clock depend on it — and your keyboard layout.
+   - Under **Services**: **Enable SSH**, with password authentication.
+     This lets you run everything below from your computer; without it
+     you'll need a keyboard and monitor on the Pi for setup.
+6. Save, then **Write** (confirm the erase). When it finishes, eject the
+   card, put it in the Pi, and power the Pi on. Wait ~2 minutes for the
+   first boot.
 
 Open a terminal: either on the Pi itself, or from your computer with
 `ssh yourusername@raspberrypi.local`. Your prompt will look like:
@@ -94,32 +116,47 @@ yourusername@raspberrypi:~ $
 
 Everything below happens in that terminal.
 
-## Step 2 — Update and install the software libraries
+## Step 2 — Update the Pi and install the software libraries
 
 ```bash
-sudo apt update && sudo apt install -y python3-pip
+sudo apt update && sudo apt install -y python3-pip git
 pip3 install --break-system-packages flask rpi_ws281x
 ```
+
+(`git` is the tool Step 3 uses to download the project from GitHub.)
 
 (That `--break-system-packages` flag just tells the Pi's newer Python
 "yes, install system-wide on purpose." It's fine on a single-purpose
 appliance like this.)
 
-## Step 3 — Put the files in place
+## Step 3 — Download the project (clone from GitHub)
 
-Create the project folder and copy the five files into it (USB stick,
-`scp`, or however you got them). The folder must contain all five files
-with exactly those names:
+One command fetches the whole project folder from GitHub:
 
 ```bash
-mkdir -p ~/livesectional-lite
-# ... copy metar_lite.py, webapp.py, config.json, airports, requirements.txt in ...
+git clone https://github.com/markyharris/livesectional-lite.git ~/livesectional-lite
 ls ~/livesectional-lite
 ```
 
-You should see all five names listed. **If `config.json` is missing** the
-map still runs (on built-in defaults) but logs a "config read failed"
-warning — copy it in now and save yourself the confusion later.
+No GitHub account is needed — the repository is public. You should see
+nine names: the five program files (`metar_lite.py`, `webapp.py`,
+`config.json`, `airports`, `requirements.txt`) plus `README.md`,
+`HOWTO.md`, `airports-world50` (a second sample layout), and
+`.gitignore`.
+
+Cloning — rather than copying files by hand — is what makes future
+updates a single `git pull` command; see "Keeping the Pi in sync with
+GitHub" near the end of this guide.
+
+**If `config.json` is missing** from the list, something went wrong
+with the download. The map still runs (on built-in defaults) but logs
+a "config read failed" warning — fix the download now and save
+yourself the confusion later.
+
+*(Working without GitHub? Copying the five program files into
+`~/livesectional-lite` by USB stick or `scp` also works — everything
+below is the same — but updates will be manual file copies; see
+"Updating the programs later.")*
 
 ## Step 4 — Set up your `airports` layout file
 
@@ -367,7 +404,9 @@ its visibility and lowest broken/overcast ceiling, per FAA thresholds.
 
 ## Updating the programs later
 
-Copy the new file(s) into `~/livesectional-lite` (replacing the old), then:
+If you cloned in Step 3, use the `git pull` method in the next section
+instead. If you placed the files manually, copy the new file(s) into
+`~/livesectional-lite` (replacing the old), then:
 
 ```bash
 sudo systemctl restart livesectional-lite livesectional-lite-web
@@ -376,6 +415,55 @@ sudo systemctl restart livesectional-lite livesectional-lite-web
 (password-free, thanks to Step 7). Your `config.json` settings and your
 `airports` layout are never touched by an update — keep your own copies
 of those two files safe; they're the parts that are uniquely yours.
+
+## Keeping the Pi in sync with GitHub
+
+The mental model: **the GitHub repository is the master record, and the
+folder on your Pi is a running copy of it. Nothing syncs on its own** —
+changes move only when you (or the project maintainer) deliberately
+send them up ("push") or bring them down ("pull").
+
+**Getting improvements onto your Pi (pull):**
+
+```bash
+cd ~/livesectional-lite
+git status
+git pull
+sudo systemctl restart livesectional-lite livesectional-lite-web
+```
+
+`git pull` downloads whatever changed on GitHub and updates your files
+in place; the restart puts the new code to work. Run `git status`
+first: it reports any files you've changed locally. Git will never
+silently overwrite a local change — if GitHub's copy of the *same* file
+also changed, the pull stops with an error and leaves yours untouched.
+
+That matters most for your two personal files, `config.json` and
+`airports` (the Map builder edits `airports` right on the Pi; those
+edits exist only on the Pi). If a pull ever stops over one of them:
+copy your version aside (`cp airports ~/airports.mine`), run
+`git checkout -- airports` to accept GitHub's copy, pull again, then
+compare and copy yours back if you still want it. Program files
+(`metar_lite.py`, `webapp.py`) have no local edits, so they pull
+cleanly every time.
+
+**Sending changes up to GitHub (push):**
+
+- **Small edits:** on the GitHub website, open the file, click the
+  **pencil icon**, edit, and press **Commit changes**. It's in the
+  repo immediately.
+- **From a computer with a clone:** edit the files, then
+  `git add -A`, `git commit -m "describe the change"`, `git push`.
+  (Pushing needs you signed in to GitHub; cloning and pulling don't.)
+- **A pull request (PR)** is a *proposed* change that sits alongside
+  the repo — nothing in the repo itself changes until someone reviews
+  it and clicks **Merge**. Maintainers often deliver program changes
+  this way; after a merge, your Pi picks the change up with `git pull`
+  like any other.
+
+One consequence worth knowing: because nothing syncs automatically, a
+Pi that is never pulled stays exactly as it was — which is fine. Update
+when there's something you want, not on a schedule.
 
 ## Security notes
 
