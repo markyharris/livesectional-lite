@@ -86,6 +86,11 @@ display loop on its next cycle:
 After each successful fetch, a single wipe sweeps the strip once
 (~1.5 s) as LEDs switch to their new colors. There are no other wipes.
 
+Running more than one map? The admin page also takes an optional
+**map name**, shown in the page header and the browser tab so maps
+stay easy to tell apart; the status box shows the Pi's hostname and
+IP address.
+
 ## Map builder
 
 The admin page has a builder for setting up the `airports` file without

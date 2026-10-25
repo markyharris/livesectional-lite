@@ -337,10 +337,14 @@ port-forward it to the internet.**
   stations are reporting, and one **"On the map"** line: four colored
   dots — green, blue, red, magenta — each followed by the number of
   LEDs currently lit in that color (the dots' tooltips name the
-  categories: VFR, MVFR, IFR, LIFR).
+  categories: VFR, MVFR, IFR, LIFR). A **Pi** line at the bottom shows
+  the Pi's hostname and IP address.
 - **Map on/off button:** turns every LED (including the legend) dark
   while weather keeps fetching, so turning it back on is instant.
   The setting survives reboots.
+- **Map name:** an optional name (in Settings) shown in the page
+  header and the browser tab — worth setting when you run more than
+  one map, so the tabs stay easy to tell apart.
 - **Brightness:** overall LED brightness, 0–100%.
 - **Night mode:** between the start and end times, brightness scales to
   the **night brightness** level (a percentage of normal). Set night

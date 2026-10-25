@@ -15,6 +15,7 @@ import base64
 import json
 import os
 import re
+import socket
 import subprocess
 import threading
 from datetime import datetime
@@ -28,6 +29,7 @@ AIRPORTS_FILE = os.path.join(HERE, "airports")
 BUILDER_FILE = os.path.join(HERE, "builder.json")
 
 DEFAULT_CONFIG = {
+    "map_name": "",
     "brightness": 60,
     "night_mode": True,
     "night_start": "22:00",
@@ -41,7 +43,7 @@ DEFAULT_CONFIG = {
 app = Flask(__name__)
 
 PAGE = """<!doctype html>
-<title>LiveSectional Lite - Admin</title>
+<title>{% if cfg.map_name %}{{ cfg.map_name }} - {% endif %}LiveSectional Lite - Admin</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,{{ favicon_b64 }}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -57,7 +59,7 @@ PAGE = """<!doctype html>
 <div style="display:flex;align-items:center;gap:0.6em;margin-bottom:0.8em">
   <img src="data:image/png;base64,{{ favicon_b64 }}" alt="" width="52" height="52"
        style="border-radius:8px">
-  <h1 style="margin:0">LiveSectional Lite</h1>
+  <h1 style="margin:0">LiveSectional Lite{% if cfg.map_name %} &mdash; {{ cfg.map_name }}{% endif %}</h1>
 </div>
 <div class="status">
   <p>Map is <strong id="st-map">{{ "ON" if cfg.map_on else "OFF" }}</strong></p>
@@ -69,6 +71,7 @@ PAGE = """<!doctype html>
      <span title="MVFR" style="color:#0066ff">&#9679;</span> <span id="st-mvfr">{{ status.counts.MVFR }}</span>
      <span title="IFR" style="color:#ff0000">&#9679;</span> <span id="st-ifr">{{ status.counts.IFR }}</span>
      <span title="LIFR" style="color:#e600e6">&#9679;</span> <span id="st-lifr">{{ status.counts.LIFR }}</span></p>
+  <p>Pi: <strong>{{ host_name }}</strong>{% if host_ip %} &middot; {{ host_ip }}{% endif %}</p>
   <p style="color:#555;margin-bottom:0">This status box updates itself
      every 30 seconds - no need to refresh the page.</p>
 </div>
@@ -135,6 +138,12 @@ PAGE = """<!doctype html>
 <hr>
 <h2 style="margin-top:1em">Settings</h2>
 <form method="post">
+  <label for="map_name">Map name (optional)</label>
+  <input type="text" id="map_name" name="map_name" value="{{ cfg.map_name }}"
+         size="24" maxlength="40" autocomplete="off">
+  <p style="margin:0.2em 0 0;color:#555">Shown in the header and the browser
+     tab, so several maps stay easy to tell apart (e.g. Hangar, Office).
+     The map's IP address is in the status box above.</p>
   <label for="brightness">Brightness: <span id="bval">{{ cfg.brightness }}</span>%</label>
   <input type="range" id="brightness" name="brightness" min="0" max="100"
          value="{{ cfg.brightness }}"
@@ -196,6 +205,31 @@ def load_config():
     except (OSError, ValueError):
         pass
     return cfg
+
+
+def host_info():
+    """This Pi's hostname and LAN address, shown in the status box so a
+    map can be found on the network without any configuration. The
+    address comes from a UDP 'connect' to a public IP - no packet is
+    sent; the socket just reveals which local address would be used."""
+    try:
+        name = socket.gethostname()
+    except OSError:
+        name = "unknown"
+    ip = ""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+        finally:
+            s.close()
+    except OSError:
+        try:
+            ip = socket.gethostbyname(name)
+        except OSError:
+            ip = ""
+    return name, ip
 
 
 def _ordinal(day):
@@ -398,9 +432,10 @@ def favicon():
 
 
 def render_page(cfg, saved=False, power_error=None, builder_error=None):
+    host_name, host_ip = host_info()
     return render_template_string(
         PAGE, cfg=cfg, status=load_status(), saved=saved,
-        favicon_b64=FAVICON_B64,
+        favicon_b64=FAVICON_B64, host_name=host_name, host_ip=host_ip,
         power_error=power_error, builder_error=builder_error,
         **builder_context())
 
@@ -487,6 +522,7 @@ def index():
         except ValueError:
             night_brightness = cfg.get("night_brightness", 25)
         cfg.update({
+            "map_name": (request.form.get("map_name") or "").strip()[:40],
             "brightness": max(0, min(100, brightness)),
             "night_mode": "night_mode" in request.form,
             "night_start": valid_time(request.form.get("night_start"), cfg["night_start"]),
