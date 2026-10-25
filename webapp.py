@@ -54,7 +54,11 @@ PAGE = """<!doctype html>
   .saved { color: green; }
   hr { border: none; border-top: 1px solid #ccc; margin: 1.8em 0 0; }
 </style>
-<h1>LiveSectional Lite</h1>
+<div style="display:flex;align-items:center;gap:0.6em;margin-bottom:0.8em">
+  <img src="data:image/png;base64,{{ favicon_b64 }}" alt="" width="52" height="52"
+       style="border-radius:8px">
+  <h1 style="margin:0">LiveSectional Lite</h1>
+</div>
 <div class="status">
   <p>Map is <strong id="st-map">{{ "ON" if cfg.map_on else "OFF" }}</strong></p>
   <p>Last fetch: <strong id="st-fetch">{{ status.last_fetch_pretty or status.last_fetch or "never" }}</strong></p>
