@@ -78,6 +78,7 @@ PAGE = """<!doctype html>
   <code>{{ update_cmd_restart }}</code></p>
   <p style="color:#555;margin-bottom:0">This status box updates itself
      every 30 seconds - no need to refresh the page.</p>
+  {% if saved %}<p class="saved" style="margin-bottom:0">Settings saved.</p>{% endif %}
 </div>
 <form method="post">
   <input type="hidden" name="toggle_map" value="1">
@@ -139,7 +140,6 @@ PAGE = """<!doctype html>
      it up on its next update - no restart needed. Your previous list is
      kept as airports.bak.</p>
 </form>
-{% if saved %}<p class="saved">Settings saved.</p>{% endif %}
 {% if power_error %}<p style="color:#b00">{{ power_error }}</p>{% endif %}
 <hr>
 <h2 style="margin-top:1em">Power</h2>
