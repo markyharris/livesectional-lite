@@ -419,7 +419,7 @@ def valid_airport_id(s):
         re.fullmatch(r"[A-Z0-9]{3,5}", s or "") is not None
 
 
-MAX_AIRPORTS = 500
+MAX_AIRPORTS = 2500
 MAX_UPLOAD_BYTES = 200_000
 
 
