@@ -205,6 +205,6 @@ it isn't here.
 
 ## Credits
 
-Built by Mark Harris, with AI pair-programming assistance from Claude
-(Anthropic) and Buster (Meta's Muse assistant). The design decisions,
-the hardware testing, and the flying are all the human's.
+Built by Mark Harris, with AI pair-programming assistance from
+Buster (Meta's Muse assistant). The design decisions, the hardware
+testing, and the flying are all the human's.
