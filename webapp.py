@@ -80,11 +80,6 @@ PAGE = """<!doctype html>
      every 30 seconds - no need to refresh the page.</p>
   {% if saved %}<p class="saved" style="margin-bottom:0">Settings saved.</p>{% endif %}
 </div>
-<form method="post">
-  <input type="hidden" name="toggle_map" value="1">
-  <button type="submit" style="margin-top:0.5em">
-    {{ "Turn map OFF" if cfg.map_on else "Turn map ON" }}</button>
-</form>
 <hr>
 <h2 style="margin-top:1em">Map builder</h2>
 <p style="color:#555;margin:0.2em 0 0">Light one LED on the string, look at
@@ -144,6 +139,11 @@ PAGE = """<!doctype html>
 <hr>
 <h2 style="margin-top:1em">Power</h2>
 <div class="row">
+  <form method="post">
+    <input type="hidden" name="toggle_map" value="1">
+    <button type="submit" style="margin-top:0">
+      {{ "Turn map OFF" if cfg.map_on else "Turn map ON" }}</button>
+  </form>
   <form method="post" onsubmit="return confirm('Reboot the Pi now? The map will be back in about a minute.')">
     <input type="hidden" name="power" value="reboot">
     <button type="submit" style="margin-top:0">Reboot</button>
