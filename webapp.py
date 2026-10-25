@@ -73,7 +73,9 @@ PAGE = """<!doctype html>
      <span title="IFR" style="color:#ff0000">&#9679;</span> <span id="st-ifr">{{ status.counts.IFR }}</span>
      <span title="LIFR" style="color:#e600e6">&#9679;</span> <span id="st-lifr">{{ status.counts.LIFR }}</span></p>
   <p>Pi: <strong>{{ host_name }}</strong>{% if host_ip %} &middot; {{ host_ip }}{% endif %}</p>
-  <p id="st-update" style="{% if not update_behind %}display:none;{% endif %}color:#8a6d00;background:#fff3cd;padding:0.4em 0.6em;border-radius:4px">Update available: <strong id="st-behind">{{ update_behind }}</strong> new commit(s) on GitHub. To update: git pull, then restart the web service.</p>
+  <p id="st-update" style="{% if not update_behind %}display:none;{% endif %}color:#8a6d00;background:#fff3cd;padding:0.4em 0.6em;border-radius:4px">Update available: <strong id="st-behind">{{ update_behind }}</strong> new commit(s) on GitHub. To update, run:<br>
+  <code>{{ update_cmd_pull }}</code><br>
+  <code>{{ update_cmd_restart }}</code></p>
   <p style="color:#555;margin-bottom:0">This status box updates itself
      every 30 seconds - no need to refresh the page.</p>
 </div>
@@ -326,6 +328,22 @@ def _update_watcher():
         time.sleep(3600)
 
 
+def _service_from_cgroup(text):
+    """The systemd unit running this process ends the cgroup path
+    (e.g. /system.slice/metar-lite-web.service). Fresh installs use
+    the documented livesectional-lite-web name as the fallback."""
+    names = re.findall(r"([A-Za-z0-9_.@-]+)\.service", text or "")
+    return names[-1] if names else "livesectional-lite-web"
+
+
+def web_service_name():
+    try:
+        with open("/proc/self/cgroup") as f:
+            return _service_from_cgroup(f.read())
+    except OSError:
+        return "livesectional-lite-web"
+
+
 def valid_time(s, fallback):
     return s if re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", s or "") else fallback
 
@@ -486,10 +504,14 @@ def favicon():
 
 def render_page(cfg, saved=False, power_error=None, builder_error=None):
     host_name, host_ip = host_info()
+    web_svc = web_service_name()
+    disp_svc = web_svc[:-4] if web_svc.endswith("-web") else web_svc
     return render_template_string(
         PAGE, cfg=cfg, status=load_status(), saved=saved,
         favicon_b64=FAVICON_B64, host_name=host_name, host_ip=host_ip,
         update_behind=UPDATE_STATE["behind"],
+        update_cmd_pull=f"cd {HERE} && git pull",
+        update_cmd_restart=f"sudo systemctl restart {disp_svc} {web_svc}",
         power_error=power_error, builder_error=builder_error,
         **builder_context())
 

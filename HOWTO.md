@@ -430,8 +430,10 @@ send them up ("push") or bring them down ("pull").
 You don't have to check GitHub by hand to know whether there's
 anything to pull: the admin page's status box checks on its own (at
 startup, then hourly) and shows an **"Update available"** line with
-the number of new commits whenever the Pi is behind. Nothing shows
-when the Pi is current.
+the number of new commits whenever the Pi is behind — the line
+includes the exact commands to run (the pull, with this Pi's folder
+path, and the service restart, with this Pi's service names).
+Nothing shows when the Pi is current.
 
 **Getting improvements onto your Pi (pull):**
 
