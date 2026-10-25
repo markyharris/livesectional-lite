@@ -113,6 +113,11 @@ Details:
   strip if the position count changed). No restart needed.
 - The handoff is a small `builder.json` file written by the web app and
   read by the display loop; only the display process drives the strip.
+- Already have a list? The builder section also uploads a whole
+  `airports` file at once - the original LiveSectional's file is the
+  same format, so a backup from one uploads as-is. The upload replaces
+  the list (validated first; the previous list is kept as
+  `airports.bak`) and takes effect the same way, no restart.
 
 ## Running
 

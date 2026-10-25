@@ -125,6 +125,20 @@ PAGE = """<!doctype html>
      data (e.g. KFLG), or NULL for an unused position, LGND for a legend LED.
      Saving takes effect on the map right away - no restart needed.</p>
 </form>
+{% if uploaded_count %}<p class="saved">Airports file uploaded -
+  {{ uploaded_count }} positions loaded.</p>{% endif %}
+<form method="post" enctype="multipart/form-data"
+      onsubmit="return confirm('Replace the whole airports list with the uploaded file? Your current list is kept as airports.bak.')">
+  <label for="airports_file">Upload an airports file</label>
+  <input type="file" id="airports_file" name="airports_file" accept=".txt,text/plain">
+  <button type="submit" name="builder_upload" value="1" style="margin-top:0.5em">Upload and replace list</button>
+  <p style="margin:0.2em 0 0;color:#555">Already have a list - for example
+     the airports file from an original LiveSectional? Its format is the
+     same (one station ID, NULL or LGND per line, in LED order), so it
+     uploads as-is. The upload replaces the whole list and the map picks
+     it up on its next update - no restart needed. Your previous list is
+     kept as airports.bak.</p>
+</form>
 {% if saved %}<p class="saved">Settings saved.</p>{% endif %}
 {% if power_error %}<p style="color:#b00">{{ power_error }}</p>{% endif %}
 <hr>
@@ -405,6 +419,56 @@ def valid_airport_id(s):
         re.fullmatch(r"[A-Z0-9]{3,5}", s or "") is not None
 
 
+MAX_AIRPORTS = 500
+MAX_UPLOAD_BYTES = 200_000
+
+
+def parse_airports_upload(upload):
+    """Validate an uploaded airports file (a backup from an original
+    LiveSectional is the expected case - same format: one entry per
+    line, in LED order). Returns (entries, error): the entries
+    normalized (trimmed, uppercased, blank lines dropped, any line
+    endings accepted), or None and a plain-language error."""
+    if upload is None or not upload.filename:
+        return None, "Choose an airports file to upload first."
+    raw = upload.read(MAX_UPLOAD_BYTES + 1)
+    if len(raw) > MAX_UPLOAD_BYTES:
+        return None, "That file is too large to be an airports file."
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return None, ("That file doesn't look like plain text. Upload "
+                      "the airports file itself - one station per line.")
+    numbered = [(n, line.strip().upper())
+                for n, line in enumerate(text.splitlines(), 1)
+                if line.strip()]
+    entries = [entry for _, entry in numbered]
+    if not entries:
+        return None, "No airport entries found in that file."
+    if len(entries) > MAX_AIRPORTS:
+        return None, (f"That file lists {len(entries)} positions - "
+                      f"the limit here is {MAX_AIRPORTS}.")
+    bad = [(n, e) for n, e in numbered if not valid_airport_id(e)][:3]
+    if bad:
+        shown = ", ".join(f"line {n} ('{e}')" for n, e in bad)
+        return None, (f"Some entries don't look like station IDs: "
+                      f"{shown}. Use the ID as it appears in the "
+                      f"METAR data, or NULL / LGND.")
+    return entries, None
+
+
+def backup_airports_file():
+    """Keep the list an upload is about to replace as airports.bak, so
+    uploading the wrong file is undoable by copying it back."""
+    try:
+        if load_airports_list():
+            with open(AIRPORTS_FILE, "rb") as src, \
+                    open(AIRPORTS_FILE + ".bak", "wb") as dst:
+                dst.write(src.read())
+    except OSError:
+        pass
+
+
 def builder_context():
     """Template context for the builder section: current position, the
     entry there, and a few neighbors on either side for orientation."""
@@ -502,7 +566,8 @@ def favicon():
     return Response(base64.b64decode(FAVICON_B64), mimetype="image/png")
 
 
-def render_page(cfg, saved=False, power_error=None, builder_error=None):
+def render_page(cfg, saved=False, power_error=None, builder_error=None,
+                uploaded_count=0):
     host_name, host_ip = host_info()
     web_svc = web_service_name()
     disp_svc = web_svc[:-4] if web_svc.endswith("-web") else web_svc
@@ -513,6 +578,7 @@ def render_page(cfg, saved=False, power_error=None, builder_error=None):
         update_cmd_pull=f"cd {HERE} && git pull",
         update_cmd_restart=f"sudo systemctl restart {disp_svc} {web_svc}",
         power_error=power_error, builder_error=builder_error,
+        uploaded_count=uploaded_count,
         **builder_context())
 
 
@@ -524,9 +590,20 @@ def index():
         # fields, and each ends in a redirect so a refresh can't repeat it.
         if any(k in request.form for k in
                ("builder_toggle", "builder_step", "builder_goto",
-                "builder_save")):
+                "builder_save", "builder_upload")):
             entries = load_airports_list()
             b = load_builder(len(entries))
+            if "builder_upload" in request.form:
+                new_entries, err = parse_airports_upload(
+                    request.files.get("airports_file"))
+                if err:
+                    return render_page(cfg, builder_error=err)
+                backup_airports_file()
+                save_airports_list(new_entries)
+                b["position"] = 0  # the list changed - start at the top
+                save_builder(b)
+                return redirect(
+                    url_for("index", uploaded=len(new_entries)))
             if "builder_toggle" in request.form:
                 b["active"] = not b["active"]
             elif "builder_step" in request.form:
@@ -610,7 +687,12 @@ def index():
         with open(CONFIG_FILE, "w") as f:
             json.dump(cfg, f, indent=2)
         return redirect(url_for("index", saved=1))
-    return render_page(cfg, saved=request.args.get("saved"))
+    try:
+        uploaded_count = int(request.args.get("uploaded") or 0)
+    except ValueError:
+        uploaded_count = 0
+    return render_page(cfg, saved=request.args.get("saved"),
+                       uploaded_count=uploaded_count)
 
 
 if __name__ == "__main__":

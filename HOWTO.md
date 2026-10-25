@@ -381,6 +381,17 @@ map right away — no restart. If you stop mid-build, the position is
 remembered (`builder.json`) and the light stays where you left it,
 even across a reboot, until you turn it off.
 
+**Already have an airports file?** If you're coming from the original
+LiveSectional, its `airports` file is the same format — one entry per
+line, in LED order. In the builder section, use **Upload an airports
+file** to load the whole list at once instead of typing each station.
+The file is checked before anything changes (every line must be a
+station ID, `NULL`, or `LGND` — up to 500 positions), the upload
+replaces the current list, and the map picks it up on its next update.
+Your previous list is kept as `airports.bak` in the same folder, so if
+you upload the wrong file you can copy it back
+(`cp airports.bak airports`).
+
 ## How it works (30-second version)
 
 Every 5 minutes the display downloads **one** file from the Aviation
