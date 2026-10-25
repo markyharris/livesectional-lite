@@ -136,7 +136,7 @@ python3 metar_lite.py --once   # one fetch + render, then exit
 python3 metar_lite.py          # loop, printing continuously
 ```
 
-Strip constants (count 183, GPIO 18, DMA 5, 800 kHz, WS2811 GRB) mirror
+Strip constants (GPIO 18, DMA 5, 800 kHz, WS2811 GRB) mirror
 the existing LiveSectional `config.py` and sit at the top of
 `metar_lite.py`.
 
