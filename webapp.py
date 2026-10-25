@@ -142,7 +142,7 @@ PAGE = """<!doctype html>
   <form method="post">
     <input type="hidden" name="toggle_map" value="1">
     <button type="submit" style="margin-top:0">
-      {{ "Turn map OFF" if cfg.map_on else "Turn map ON" }}</button>
+      {{ "Turn Off LED's" if cfg.map_on else "Turn On LED's" }}</button>
   </form>
   <form method="post" onsubmit="return confirm('Reboot the Pi now? The map will be back in about a minute.')">
     <input type="hidden" name="power" value="reboot">
