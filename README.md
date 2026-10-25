@@ -6,8 +6,8 @@
 
 A minimal LED sectional map: **METARs only**, one LED per airport, driven
 from a single bulk download instead of hundreds of API calls. It reuses
-the `airports` layout file from the full LiveSectional project unchanged
-(183 positions; `NULL` = unlit placeholder, `LGND` = legend LEDs).
+the `airports` layout file from the full LiveSectional project unchanged; 
+`NULL` = unlit placeholder, `LGND` = legend LEDs).
 
 ## How Lite differs from the original LiveSectional
 
@@ -65,7 +65,7 @@ Colors are the standard LiveSectional scheme:
 If the XML has no `flight_category` for a station, it's computed from
 visibility and ceiling (lowest BKN/OVC layer) using standard FAA
 thresholds. The first four `LGND` LEDs show the category colors above;
-the remaining legend LEDs show no-data (off), high wind (yellow), and
+the remaining legend LEDs show no-data (off), high wind (blink), and
 lightning (white), mirroring the original map's legend row.
 
 ## The four settings
