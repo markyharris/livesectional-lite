@@ -435,8 +435,9 @@ of those two files safe; they're the parts that are uniquely yours.
 
 The mental model: **the GitHub repository is the master record, and the
 folder on your Pi is a running copy of it. Nothing syncs on its own** —
-changes move only when you (or the project maintainer) deliberately
-send them up ("push") or bring them down ("pull").
+the maintainer publishes updates to GitHub, and they reach your Pi only
+when you deliberately bring them down ("pull"). The flow is one-way:
+your Pi never sends anything back to the repository.
 
 You don't have to check GitHub by hand to know whether there's
 anything to pull: the admin page's status box checks on its own (at
@@ -479,20 +480,6 @@ copy your version aside (`cp airports ~/airports.mine`), run
 compare and copy yours back if you still want it.) Program files
 (`metar_lite.py`, `webapp.py`) have no local edits, so they pull
 cleanly every time.
-
-**Sending changes up to GitHub (push):**
-
-- **Small edits:** on the GitHub website, open the file, click the
-  **pencil icon**, edit, and press **Commit changes**. It's in the
-  repo immediately.
-- **From a computer with a clone:** edit the files, then
-  `git add -A`, `git commit -m "describe the change"`, `git push`.
-  (Pushing needs you signed in to GitHub; cloning and pulling don't.)
-- **A pull request (PR)** is a *proposed* change that sits alongside
-  the repo — nothing in the repo itself changes until someone reviews
-  it and clicks **Merge**. Maintainers often deliver program changes
-  this way; after a merge, your Pi picks the change up with `git pull`
-  like any other.
 
 One consequence worth knowing: because nothing syncs automatically, a
 Pi that is never pulled stays exactly as it was — which is fine. Update
