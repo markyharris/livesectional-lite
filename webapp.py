@@ -18,7 +18,7 @@ import subprocess
 import threading
 from datetime import datetime
 
-from flask import Flask, redirect, render_template_string, request, url_for
+from flask import Flask, jsonify, redirect, render_template_string, request, url_for
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(HERE, "config.json")
@@ -54,15 +54,17 @@ PAGE = """<!doctype html>
 </style>
 <h1>LiveSectional Lite</h1>
 <div class="status">
-  <p>Map is <strong>{{ "ON" if cfg.map_on else "OFF" }}</strong></p>
-  <p>Last fetch: <strong>{{ status.last_fetch_pretty or status.last_fetch or "never" }}</strong></p>
-  <p>Stations reporting: <strong>{{ status.stations_reporting }}</strong>
-     of {{ status.stations_total }} mapped</p>
+  <p>Map is <strong id="st-map">{{ "ON" if cfg.map_on else "OFF" }}</strong></p>
+  <p>Last fetch: <strong id="st-fetch">{{ status.last_fetch_pretty or status.last_fetch or "never" }}</strong></p>
+  <p>Stations reporting: <strong id="st-reporting">{{ status.stations_reporting }}</strong>
+     of <span id="st-total">{{ status.stations_total }}</span> mapped</p>
   <p>On the map:
-     <span title="VFR" style="color:#00b050">&#9679;</span> {{ status.counts.VFR }}
-     <span title="MVFR" style="color:#0066ff">&#9679;</span> {{ status.counts.MVFR }}
-     <span title="IFR" style="color:#ff0000">&#9679;</span> {{ status.counts.IFR }}
-     <span title="LIFR" style="color:#e600e6">&#9679;</span> {{ status.counts.LIFR }}</p>
+     <span title="VFR" style="color:#00b050">&#9679;</span> <span id="st-vfr">{{ status.counts.VFR }}</span>
+     <span title="MVFR" style="color:#0066ff">&#9679;</span> <span id="st-mvfr">{{ status.counts.MVFR }}</span>
+     <span title="IFR" style="color:#ff0000">&#9679;</span> <span id="st-ifr">{{ status.counts.IFR }}</span>
+     <span title="LIFR" style="color:#e600e6">&#9679;</span> <span id="st-lifr">{{ status.counts.LIFR }}</span></p>
+  <p style="color:#555;margin-bottom:0">This status box updates itself
+     every 30 seconds - no need to refresh the page.</p>
 </div>
 <form method="post">
   <input type="hidden" name="toggle_map" value="1">
@@ -151,6 +153,32 @@ PAGE = """<!doctype html>
     Lightning flash (thunderstorm in the METAR)</label>
   <button type="submit">Save settings</button>
 </form>
+<script>
+// Keep the status box current without a page refresh: the display loop
+// fetches every 5 minutes, so poll the server every 30 seconds and swap
+// in the new values. Only the status box changes - form input elsewhere
+// on the page is never touched.
+(function () {
+  function setText(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+  function updateStatus() {
+    fetch("/api/status").then(function (r) { return r.json(); })
+      .then(function (s) {
+        setText("st-map", s.map_on ? "ON" : "OFF");
+        setText("st-fetch", s.last_fetch_pretty);
+        setText("st-reporting", s.stations_reporting);
+        setText("st-total", s.stations_total);
+        setText("st-vfr", s.counts.VFR);
+        setText("st-mvfr", s.counts.MVFR);
+        setText("st-ifr", s.counts.IFR);
+        setText("st-lifr", s.counts.LIFR);
+      }).catch(function () { /* keep the values already on screen */ });
+  }
+  setInterval(updateStatus, 30000);
+})();
+</script>
 """
 
 
@@ -335,6 +363,21 @@ POWER_PAGE = """<!doctype html>
 <h1>{{ heading }}</h1>
 <p>{{ detail }}</p>
 </body>"""
+
+
+@app.route("/api/status")
+def api_status():
+    """JSON form of the status box, polled by the page every 30 seconds
+    so Last fetch (and the counts) stay current without a refresh."""
+    status = load_status()
+    return jsonify({
+        "last_fetch": status.get("last_fetch"),
+        "last_fetch_pretty": status.get("last_fetch_pretty") or "never",
+        "stations_reporting": status.get("stations_reporting", 0),
+        "stations_total": status.get("stations_total", 0),
+        "counts": status["counts"],
+        "map_on": bool(load_config().get("map_on", True)),
+    })
 
 
 def render_page(cfg, saved=False, power_error=None, builder_error=None):
