@@ -11,6 +11,7 @@ builder.json, which the display loop also picks up live.
 There is deliberately NO login - run this on your LAN only.
 """
 
+import base64
 import json
 import os
 import re
@@ -18,7 +19,7 @@ import subprocess
 import threading
 from datetime import datetime
 
-from flask import Flask, jsonify, redirect, render_template_string, request, url_for
+from flask import Flask, Response, jsonify, redirect, render_template_string, request, url_for
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(HERE, "config.json")
@@ -41,6 +42,7 @@ app = Flask(__name__)
 
 PAGE = """<!doctype html>
 <title>LiveSectional Lite - Admin</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,{{ favicon_b64 }}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   body { font-family: sans-serif; max-width: 34em; margin: 2em auto; padding: 0 1em; }
@@ -380,9 +382,21 @@ def api_status():
     })
 
 
+# Tab icon: a scrap of sectional chart with a green (VFR) LED lit at the
+# airport. Embedded as base64 so the app stays a single file; the same
+# bytes are also served at /favicon.ico for browsers that ask there.
+FAVICON_B64 = "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"
+
+
+@app.route("/favicon.ico")
+def favicon():
+    return Response(base64.b64decode(FAVICON_B64), mimetype="image/png")
+
+
 def render_page(cfg, saved=False, power_error=None, builder_error=None):
     return render_template_string(
         PAGE, cfg=cfg, status=load_status(), saved=saved,
+        favicon_b64=FAVICON_B64,
         power_error=power_error, builder_error=builder_error,
         **builder_context())
 
