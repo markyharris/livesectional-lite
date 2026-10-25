@@ -84,7 +84,7 @@ PAGE = """<!doctype html>
 </div>
 <hr>
 <details class="section" id="sec-builder"{% if builder_error or builder.active %} open{% endif %}>
-<summary style="margin-top:1em"><h2 style="display:inline;margin:0">Map builder</h2></summary>
+<summary style="margin-top:1em"><h2 style="display:inline;margin:0">Map Builder</h2></summary>
 <p style="color:#555;margin:0.2em 0 0">Light one LED on the string, look at
   where it sits on the map, and type the airport that belongs there - no more
   counting LEDs by hand. While the builder light is on, the weather display
