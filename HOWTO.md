@@ -384,7 +384,9 @@ While the builder light is on, the weather display pauses on that one
 LED (weather data keeps updating underneath). Saves take effect on the
 map right away — no restart. If you stop mid-build, the position is
 remembered (`builder.json`) and the light stays where you left it,
-even across a reboot, until you turn it off.
+even across a reboot, until you turn it off. Each step or save reloads
+the page, and the page scrolls back to where you were in the section —
+no hunting for your place on a small screen.
 
 **Already have an airports file?** If you're coming from the original
 LiveSectional, its `airports` file is the same format — one entry per

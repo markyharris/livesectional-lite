@@ -248,6 +248,31 @@ document.querySelectorAll("details.section").forEach(function (d) {
   });
 });
 </script>
+<script>
+// Map builder scroll-back: builder actions post and reload, which
+// would otherwise drop the user back at the top of the page, hunting
+// for the builder section on a small screen. Remember the scroll
+// position when a builder form is submitted and restore it on the
+// reload (one-shot - a plain manual refresh stays at the top).
+(function () {
+  var sec = document.getElementById("sec-builder");
+  if (!sec) return;
+  sec.querySelectorAll("form").forEach(function (f) {
+    f.addEventListener("submit", function () {
+      try {
+        sessionStorage.setItem("lsl-scroll", String(window.scrollY));
+      } catch (e) {}
+    });
+  });
+  try {
+    var y = sessionStorage.getItem("lsl-scroll");
+    if (y !== null) {
+      sessionStorage.removeItem("lsl-scroll");
+      window.scrollTo(0, parseInt(y, 10) || 0);
+    }
+  } catch (e) {}
+})();
+</script>
 """
 
 
