@@ -9,6 +9,34 @@ from a single bulk download instead of hundreds of API calls. It reuses
 the `airports` layout file from the full LiveSectional project unchanged
 (183 positions; `NULL` = unlit placeholder, `LGND` = legend LEDs).
 
+## How Lite differs from the original LiveSectional
+
+Lite is a ground-up rework of the original LiveSectional that keeps
+exactly one job — current flight categories on the wall — and discards
+the rest:
+
+- **Scale:** about 1,000 lines in two files (`metar_lite.py`,
+  `webapp.py`) vs. roughly 7,600 lines across a dozen scripts
+  (separate fetch, display, wipes, admin, and utility programs).
+- **Data:** one bulk METAR cache download every 5 minutes instead of
+  per-station API queries. The `airports` layout file is shared with
+  the original, unchanged.
+- **Interface:** one admin page — status, settings, power buttons,
+  and the map builder — instead of many configuration pages and
+  editors. The LED count is simply the number of lines in `airports`;
+  there is nothing else to dimension.
+- **Failure behavior:** a failed fetch keeps the last good frame lit;
+  the map never goes dark over a network hiccup. Without the LED
+  library it runs as a console simulation, so it can be tested on any
+  machine before it ever drives a strip.
+- **Updates:** `git pull` and a service restart.
+
+What the original has that Lite does not: TAF and MOS display modes
+(with a rotary-switch input to select between data types), a heat-map
+mode that lights airports by how often you've landed there, OLED/LCD
+info displays, and web-based backup of the config, airports, and log
+files. See "Deliberately left out" below for the rest of the omissions.
+
 ## How the data works
 
 Every 5 minutes the app downloads the Aviation Weather Center cache file:
