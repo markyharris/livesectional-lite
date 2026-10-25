@@ -339,9 +339,14 @@ port-forward it to the internet.**
   LEDs currently lit in that color (the dots' tooltips name the
   categories: VFR, MVFR, IFR, LIFR). A **Pi** line at the bottom shows
   the Pi's hostname and IP address.
-- **Map on/off button:** turns every LED (including the legend) dark
-  while weather keeps fetching, so turning it back on is instant.
-  The setting survives reboots.
+- **Collapsible sections:** the Map builder, Power and Settings
+  sections start closed — click a section's header to open it (the
+  status box always stays visible). The page remembers, in this
+  browser, which sections you left open; a section also opens on its
+  own when it has something to show you, like a builder error.
+- **Map on/off button:** in the Power section — turns every LED
+  (including the legend) dark while weather keeps fetching, so
+  turning it back on is instant. The setting survives reboots.
 - **Map name:** an optional name (in Settings) shown in the page
   header and the browser tab — worth setting when you run more than
   one map, so the tabs stay easy to tell apart.

@@ -56,6 +56,8 @@ PAGE = """<!doctype html>
   .status { background: #f0f0f0; padding: 0.8em 1em; border-radius: 6px; }
   .saved { color: green; }
   hr { border: none; border-top: 1px solid #ccc; margin: 1.8em 0 0; }
+  details.section { margin: 0.2em 0; }
+  summary { cursor: pointer; }
 </style>
 <div style="display:flex;align-items:center;gap:0.6em;margin-bottom:0.8em">
   <img src="data:image/png;base64,{{ favicon_b64 }}" alt="" width="52" height="52"
@@ -81,7 +83,8 @@ PAGE = """<!doctype html>
   {% if saved %}<p class="saved" style="margin-bottom:0">Settings saved.</p>{% endif %}
 </div>
 <hr>
-<h2 style="margin-top:1em">Map builder</h2>
+<details class="section" id="sec-builder"{% if builder_error or builder.active %} open{% endif %}>
+<summary style="margin-top:1em"><h2 style="display:inline;margin:0">Map builder</h2></summary>
 <p style="color:#555;margin:0.2em 0 0">Light one LED on the string, look at
   where it sits on the map, and type the airport that belongs there - no more
   counting LEDs by hand. While the builder light is on, the weather display
@@ -135,9 +138,11 @@ PAGE = """<!doctype html>
      it up on its next update - no restart needed. Your previous list is
      kept as airports.bak.</p>
 </form>
-{% if power_error %}<p style="color:#b00">{{ power_error }}</p>{% endif %}
+</details>
 <hr>
-<h2 style="margin-top:1em">Power</h2>
+<details class="section" id="sec-power"{% if power_error %} open{% endif %}>
+<summary style="margin-top:1em"><h2 style="display:inline;margin:0">Power</h2></summary>
+{% if power_error %}<p style="color:#b00">{{ power_error }}</p>{% endif %}
 <div class="row">
   <form method="post">
     <input type="hidden" name="toggle_map" value="1">
@@ -153,8 +158,10 @@ PAGE = """<!doctype html>
     <button type="submit" style="margin-top:0">Shutdown</button>
   </form>
 </div>
+</details>
 <hr>
-<h2 style="margin-top:1em">Settings</h2>
+<details class="section" id="sec-settings">
+<summary style="margin-top:1em"><h2 style="display:inline;margin:0">Settings</h2></summary>
 <form method="post">
   <label for="map_name">Map name (optional)</label>
   <input type="text" id="map_name" name="map_name" value="{{ cfg.map_name }}"
@@ -186,6 +193,7 @@ PAGE = """<!doctype html>
     Lightning flash (thunderstorm in the METAR)</label>
   <button type="submit">Save settings</button>
 </form>
+</details>
 <p style="color:#888;font-size:0.85em;margin-top:1.8em">Weather data:
 NOAA Aviation Weather Center, refreshed every 5 minutes. Displayed
 conditions are indicative only - not for navigation.</p>
@@ -223,6 +231,22 @@ conditions are indicative only - not for navigation.</p>
   }
   setInterval(updateStatus, 30000);
 })();
+</script>
+<script>
+// Collapsible sections: remember which ones this browser left open,
+// so a page reload - every button here posts and reloads - doesn't
+// slam the section shut mid-task. Sections the server rendered open
+// (an error to show, the builder light on) stay open regardless.
+document.querySelectorAll("details.section").forEach(function (d) {
+  try {
+    if (localStorage.getItem("lsl-open-" + d.id) === "1") d.open = true;
+  } catch (e) { /* storage unavailable - sections just start closed */ }
+  d.addEventListener("toggle", function () {
+    try {
+      localStorage.setItem("lsl-open-" + d.id, d.open ? "1" : "0");
+    } catch (e) {}
+  });
+});
 </script>
 """
 
