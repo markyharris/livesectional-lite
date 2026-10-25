@@ -18,6 +18,7 @@ import re
 import socket
 import subprocess
 import threading
+import time
 from datetime import datetime
 
 from flask import Flask, Response, jsonify, redirect, render_template_string, request, url_for
@@ -72,6 +73,7 @@ PAGE = """<!doctype html>
      <span title="IFR" style="color:#ff0000">&#9679;</span> <span id="st-ifr">{{ status.counts.IFR }}</span>
      <span title="LIFR" style="color:#e600e6">&#9679;</span> <span id="st-lifr">{{ status.counts.LIFR }}</span></p>
   <p>Pi: <strong>{{ host_name }}</strong>{% if host_ip %} &middot; {{ host_ip }}{% endif %}</p>
+  <p id="st-update" style="{% if not update_behind %}display:none;{% endif %}color:#8a6d00;background:#fff3cd;padding:0.4em 0.6em;border-radius:4px">Update available: <strong id="st-behind">{{ update_behind }}</strong> new commit(s) on GitHub. To update: git pull, then restart the web service.</p>
   <p style="color:#555;margin-bottom:0">This status box updates itself
      every 30 seconds - no need to refresh the page.</p>
 </div>
@@ -189,6 +191,15 @@ PAGE = """<!doctype html>
         setText("st-mvfr", s.counts.MVFR);
         setText("st-ifr", s.counts.IFR);
         setText("st-lifr", s.counts.LIFR);
+        var upd = document.getElementById("st-update");
+        if (upd) {
+          if (s.update_available) {
+            setText("st-behind", s.commits_behind);
+            upd.style.display = "";
+          } else {
+            upd.style.display = "none";
+          }
+        }
       }).catch(function () { /* keep the values already on screen */ });
   }
   setInterval(updateStatus, 30000);
@@ -273,6 +284,43 @@ def load_status():
                 pass
     status["counts"] = counts
     return status
+
+
+# ---------------------------------------------------------------------------
+# Update check
+#
+# The install is a git clone, so "is an update available?" is just "is
+# origin/main ahead of us?" A background thread runs git fetch at
+# startup and then hourly (plain git - no GitHub API, no rate limits)
+# and counts the commits we are behind. The result only ever surfaces
+# as the amber line in the status box; any failure (no network, not a
+# git checkout, git missing) leaves the count at zero and the page
+# stays quiet.
+# ---------------------------------------------------------------------------
+UPDATE_STATE = {"behind": 0}
+
+
+def _git(*args):
+    return subprocess.run(
+        ["git", "-C", HERE, *args], capture_output=True, text=True,
+        timeout=30, env={**os.environ, "GIT_TERMINAL_PROMPT": "0"})
+
+
+def check_for_update():
+    try:
+        if _git("fetch", "--quiet", "origin").returncode != 0:
+            return
+        out = _git("rev-list", "--count", "HEAD..origin/main")
+        if out.returncode == 0:
+            UPDATE_STATE["behind"] = int(out.stdout.strip() or 0)
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        pass
+
+
+def _update_watcher():
+    while True:
+        check_for_update()
+        time.sleep(3600)
 
 
 def valid_time(s, fallback):
@@ -417,6 +465,8 @@ def api_status():
         "stations_total": status.get("stations_total", 0),
         "counts": status["counts"],
         "map_on": bool(load_config().get("map_on", True)),
+        "update_available": UPDATE_STATE["behind"] > 0,
+        "commits_behind": UPDATE_STATE["behind"],
     })
 
 
@@ -436,6 +486,7 @@ def render_page(cfg, saved=False, power_error=None, builder_error=None):
     return render_template_string(
         PAGE, cfg=cfg, status=load_status(), saved=saved,
         favicon_b64=FAVICON_B64, host_name=host_name, host_ip=host_ip,
+        update_behind=UPDATE_STATE["behind"],
         power_error=power_error, builder_error=builder_error,
         **builder_context())
 
@@ -539,4 +590,5 @@ def index():
 
 if __name__ == "__main__":
     # LAN only - no authentication by design.
+    threading.Thread(target=_update_watcher, daemon=True).start()
     app.run(host="0.0.0.0", port=5000)

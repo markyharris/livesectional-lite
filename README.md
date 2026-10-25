@@ -89,7 +89,8 @@ After each successful fetch, a single wipe sweeps the strip once
 Running more than one map? The admin page also takes an optional
 **map name**, shown in the page header and the browser tab so maps
 stay easy to tell apart; the status box shows the Pi's hostname and
-IP address.
+IP address. The status box also flags **"Update available"** when
+the Pi's copy is behind the GitHub repository (checked hourly).
 
 ## Map builder
 
