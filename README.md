@@ -202,3 +202,9 @@ No TAF, no MOS, no other weather products. No selectable wipes (one
 wipe, hard-coded). No per-station API calls. No accounts, no database,
 no settings beyond the four above. If it isn't needed to light the map,
 it isn't here.
+
+## Credits
+
+Built by Mark Harris, with AI pair-programming assistance from Claude
+(Anthropic) and Buster (Meta's Muse assistant). The design decisions,
+the hardware testing, and the flying are all the human's.
