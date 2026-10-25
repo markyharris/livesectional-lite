@@ -440,10 +440,20 @@ also changed, the pull stops with an error and leaves yours untouched.
 
 That matters most for your two personal files, `config.json` and
 `airports` (the Map builder edits `airports` right on the Pi; those
-edits exist only on the Pi). If a pull ever stops over one of them:
+edits exist only on the Pi). **Recommended one-time setup** so pulls
+never trip over them at all — run this once, in the folder on the Pi:
+
+```bash
+git update-index --skip-worktree config.json airports
+```
+
+That tells git "these two files are mine; never update them from the
+repo and don't report them as changed." Program updates then pull
+cleanly every time, and `git status` stays quiet about your files.
+(If a pull ever does stop over one of them anyway:
 copy your version aside (`cp airports ~/airports.mine`), run
 `git checkout -- airports` to accept GitHub's copy, pull again, then
-compare and copy yours back if you still want it. Program files
+compare and copy yours back if you still want it.) Program files
 (`metar_lite.py`, `webapp.py`) have no local edits, so they pull
 cleanly every time.
 
