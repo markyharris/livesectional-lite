@@ -92,7 +92,7 @@ stay easy to tell apart; the status box shows the Pi's hostname and
 IP address. The status box also flags **"Update available"** when
 the Pi's copy is behind the GitHub repository (checked hourly).
 
-## Map builder
+## Map Builder
 
 The admin page has a builder for setting up the `airports` file without
 counting LEDs by hand. Pick a position (or step with Previous/Next) and

@@ -175,7 +175,7 @@ The `airports` file is the map. Rules:
   not a fault.
 
 You don't have to get this file perfect by hand: once the map is
-running, the admin page's **Map builder** (see "Using the admin page")
+running, the admin page's **Map Builder** (see "Using the admin page")
 lights one LED at a time on the physical string so you can walk the
 map position by position and type each airport where it belongs.
 
@@ -339,7 +339,7 @@ port-forward it to the internet.**
   LEDs currently lit in that color (the dots' tooltips name the
   categories: VFR, MVFR, IFR, LIFR). A **Pi** line at the bottom shows
   the Pi's hostname and IP address.
-- **Collapsible sections:** the Map builder, Power and Settings
+- **Collapsible sections:** the Map Builder, Power and Settings
   sections start closed — click a section's header to open it (the
   status box always stays visible). The page remembers, in this
   browser, which sections you left open; a section also opens on its
@@ -361,7 +361,7 @@ port-forward it to the internet.**
 Settings are stored in `config.json` and picked up by the display
 within a few seconds — no restart needed.
 
-### The Map builder (entering your airports without counting)
+### The Map Builder (entering your airports without counting)
 
 The builder section of the admin page fills in the `airports` file one
 position at a time, using the physical map as the reference:
@@ -470,7 +470,7 @@ silently overwrite a local change — if GitHub's copy of the *same* file
 also changed, the pull stops with an error and leaves yours untouched.
 
 That matters most for your two personal files, `config.json` and
-`airports` (the Map builder edits `airports` right on the Pi; those
+`airports` (the Map Builder edits `airports` right on the Pi; those
 edits exist only on the Pi). **Recommended one-time setup** so pulls
 never trip over them at all — run this once, in the folder on the Pi:
 
