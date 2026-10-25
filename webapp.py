@@ -170,6 +170,8 @@ PAGE = """<!doctype html>
     Lightning flash (thunderstorm in the METAR)</label>
   <button type="submit">Save settings</button>
 </form>
+<p style="color:#888;font-size:0.85em;margin-top:1.8em">Weather data:
+NOAA Aviation Weather Center, refreshed every 5 minutes.</p>
 <script>
 // Keep the status box current without a page refresh: the display loop
 // fetches every 5 minutes, so poll the server every 30 seconds and swap
