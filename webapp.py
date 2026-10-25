@@ -68,10 +68,10 @@ PAGE = """<!doctype html>
   <p>Stations reporting: <strong id="st-reporting">{{ status.stations_reporting }}</strong>
      of <span id="st-total">{{ status.stations_total }}</span> mapped</p>
   <p>On the map:
-     <span title="VFR" style="color:#00b050">&#9679;</span> <span id="st-vfr">{{ status.counts.VFR }}</span>
-     <span title="MVFR" style="color:#0066ff">&#9679;</span> <span id="st-mvfr">{{ status.counts.MVFR }}</span>
-     <span title="IFR" style="color:#ff0000">&#9679;</span> <span id="st-ifr">{{ status.counts.IFR }}</span>
-     <span title="LIFR" style="color:#e600e6">&#9679;</span> <span id="st-lifr">{{ status.counts.LIFR }}</span></p>
+     <span title="VFR" style="color:#00b050;font-size:1.6em;vertical-align:-0.12em">&#9679;</span> <span id="st-vfr">{{ status.counts.VFR }}</span>
+     <span title="MVFR" style="color:#0066ff;font-size:1.6em;vertical-align:-0.12em">&#9679;</span> <span id="st-mvfr">{{ status.counts.MVFR }}</span>
+     <span title="IFR" style="color:#ff0000;font-size:1.6em;vertical-align:-0.12em">&#9679;</span> <span id="st-ifr">{{ status.counts.IFR }}</span>
+     <span title="LIFR" style="color:#e600e6;font-size:1.6em;vertical-align:-0.12em">&#9679;</span> <span id="st-lifr">{{ status.counts.LIFR }}</span></p>
   <p>Pi: <strong>{{ host_name }}</strong>{% if host_ip %} &middot; {{ host_ip }}{% endif %}</p>
   <p id="st-update" style="{% if not update_behind %}display:none;{% endif %}color:#8a6d00;background:#fff3cd;padding:0.4em 0.6em;border-radius:4px">Update available: <strong id="st-behind">{{ update_behind }}</strong> new commit(s) on GitHub. To update, run:<br>
   <code>{{ update_cmd_pull }}</code><br>
