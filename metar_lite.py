@@ -51,6 +51,7 @@ RENDER_INTERVAL = 0.25        # seconds between blink/flash re-renders
 WIND_THRESHOLD_KT = 15        # high-wind blink at/above this speed or gust
 NIGHT_BRIGHTNESS_FACTOR = 0.25
 WIPE_SECONDS = 1.5            # total duration of the single wipe transition
+BLANK_SECONDS = 0.5           # dark beat before the wipe, so updates show
 
 # LED strip configuration (mirrors livesectional config.py / metar-v4.py)
 LED_COUNT = 183               # positions in the airports file
@@ -388,8 +389,14 @@ class PiStrip:
         self.strip.show()
 
     def wipe(self, colors, brightness_pct, symbols=None):
-        """The one wipe: a front sweeps the strip, each LED switching to
-        its new color as the front passes."""
+        """The update transition: blank the whole string for a beat,
+        then a front sweeps it, each LED switching to its new color as
+        the front passes. The blank beat makes an update visible even
+        when most colors didn't change."""
+        for i in range(self.count):
+            self.strip.setPixelColorRGB(i, 0, 0, 0)
+        self.strip.show()
+        time.sleep(BLANK_SECONDS)
         delay = WIPE_SECONDS / self.count
         for i, c in enumerate(colors):
             r, g, b = scale(c, brightness_pct)
@@ -410,7 +417,8 @@ class SimStrip:
               flush=True)
 
     def wipe(self, colors, brightness_pct, symbols=None):
-        print(f"--- wipe ({WIPE_SECONDS:.1f}s) -> new data ---", flush=True)
+        print(f"--- blank ({BLANK_SECONDS:.1f}s) -> wipe "
+              f"({WIPE_SECONDS:.1f}s) -> new data ---", flush=True)
         self.show(colors, brightness_pct, symbols)
 
 

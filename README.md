@@ -83,8 +83,10 @@ display loop on its next cycle:
 4. **Lightning** — stations reporting TS/LTNG flash white instead of
    showing a steady category color.
 
-After each successful fetch, a single wipe sweeps the strip once
-(~1.5 s) as LEDs switch to their new colors. There are no other wipes.
+After each successful fetch, the string blanks for a beat (~0.5 s),
+then a single wipe sweeps the strip once (~1.5 s) as LEDs switch to
+their new colors - so an update is visible even when no color
+changed. There are no other wipes.
 
 Running more than one map? The admin page also takes an optional
 **map name**, shown in the page header and the browser tab so maps
