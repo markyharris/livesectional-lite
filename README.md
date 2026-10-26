@@ -60,13 +60,14 @@ Colors are the standard LiveSectional scheme:
 | MVFR | blue |
 | IFR  | red |
 | LIFR | magenta |
-| No data / NULL | off |
+| No data (station not reporting) | dim white (silver) |
+| NULL (unused position) | off |
 
 If the XML has no `flight_category` for a station, it's computed from
 visibility and ceiling (lowest BKN/OVC layer) using standard FAA
 thresholds. The first four `LGND` LEDs show the category colors above;
-the remaining legend LEDs show no-data (off), high wind (blink), and
-lightning (white), mirroring the original map's legend row.
+the remaining legend LEDs show no-data (dim white), high wind (blink),
+and lightning (white), mirroring the original map's legend row.
 
 ## The four settings
 

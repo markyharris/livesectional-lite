@@ -196,8 +196,9 @@ map position by position and type each airport where it belongs.
 ## Step 5 — Test run (before automating anything)
 
 First, a no-hardware test — it prints one line of letters per update
-(`V`/`M`/`I`/`L` for categories, `.` = off, `G` = legend, `B` = the
-map builder's lit position) instead of driving LEDs:
+(`V`/`M`/`I`/`L` for categories, `N` = no weather reported — dim
+white on the strip, `.` = off, `G` = legend, `B` = the map builder's
+lit position) instead of driving LEDs:
 
 ```bash
 cd ~/livesectional-lite

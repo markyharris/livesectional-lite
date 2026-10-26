@@ -69,13 +69,14 @@ COLORS = {
     "LIFR": (255, 0, 255),    # magenta
 }
 OFF = (0, 0, 0)
+NO_DATA = (32, 32, 32)        # dim white ("silver") - station not reporting
 FLASH_COLOR = (255, 255, 200)  # bright warm white for lightning
 
 # Legend (LGND) LEDs, in airports-file order. The first four are the
 # flight-category legend; the rest mirror the original map's legend row:
-# no-data (off), high wind (yellow), lightning (white).
+# no-data (dim white), high wind (yellow), lightning (white).
 LEGEND = [COLORS["VFR"], COLORS["MVFR"], COLORS["IFR"], COLORS["LIFR"],
-          OFF, (255, 255, 0), (255, 255, 255)]
+          NO_DATA, (255, 255, 0), (255, 255, 255)]
 
 DEFAULT_CONFIG = {
     "brightness": 60,         # percent, 0-100
@@ -347,7 +348,7 @@ def compute_frame(layout, metars, cfg, t=None, builder=None):
             symbols.append("G"); legend_i += 1; continue
         m = metars.get(pos)
         if m is None:
-            colors.append(OFF); symbols.append("."); continue
+            colors.append(NO_DATA); symbols.append("N"); continue
         if cfg.get("lightning") and ("TS" in m["wx"] or "LTNG" in m["wx"]):
             if flash_on:
                 colors.append(FLASH_COLOR); symbols.append("*")
