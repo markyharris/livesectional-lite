@@ -10,15 +10,24 @@ position without counting LEDs by hand.
 This guide assumes **no Linux experience**. Every command is copy-paste.
 Where a command asks for your password, that's normal during setup.
 
+**Copying the commands:** don't copy line by line. Reading this guide
+on GitHub, hover over any command block and click the **copy icon** at
+its top-right corner — that copies the whole block at once. Paste it
+into the terminal in one go (right-click to paste, or Ctrl+Shift+V),
+press Enter once, and the lines run in order.
+
 ---
 
 ## What you need
 
 **Hardware**
 
-- A Raspberry Pi — a **Pi 4 (2 GB)** is ideal. A **Pi Zero 2 W** or 3B+ also
-  works. **Avoid the Pi 5** (its new I/O chip blocks the LED library this
-  project uses) and the **original Pi Zero W** (too slow).
+- A Raspberry Pi — a **Pi 4 (2 GB)** is ideal. A **Pi Zero 2 W** or
+  **3B/3B+** also works well. Even the **original Pi Zero W** runs it —
+  field-tested: very slow to boot and to load the admin page, but the
+  map lights correctly and everything works (with a Zero W, pick the
+  **32-bit** OS in Step 1 — it can't run the 64-bit image). **Avoid the
+  Pi 5** — its new I/O chip blocks the LED library this project uses.
 - A microSD card, 16 GB or larger.
 - The Pi's normal power supply.
 - A WS2812B-style LED strip/strand wired to the map.
@@ -89,6 +98,8 @@ the card completely** — use a card with nothing on it you need.
    release each time, so you're current by construction. Lite has no
    desktop — this map is a headless appliance, everything happens in
    the terminal, and Lite boots faster and has less to update.
+   (On an **original Pi Zero W**, choose **Raspberry Pi OS Lite
+   (32-bit)** instead — that model can't run the 64-bit image.)
 4. **Choose Storage:** your SD card (double-check it's the card, not a
    drive you care about).
 5. Click **Next**. When Imager offers **OS customisation**, choose
