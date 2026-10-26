@@ -362,6 +362,9 @@ port-forward it to the internet.**
   brightness to **0** and the map goes completely off overnight.
 - **High winds:** stations at or above 15 kt (wind or gust) blink.
 - **Lightning:** stations reporting thunderstorms flash white.
+- **Use wipe:** each update blanks the string for a beat, then
+  sweeps the new data in, so an update is visible even when no color
+  changed. Turn it off and new data simply appears.
 - **Reboot / Shutdown:** as set up in Step 7.
 
 Settings are stored in `config.json` and picked up by the display

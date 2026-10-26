@@ -38,6 +38,7 @@ DEFAULT_CONFIG = {
     "night_brightness": 25,
     "high_wind": True,
     "lightning": True,
+    "use_wipe": True,
     "map_on": True,
 }
 
@@ -191,6 +192,8 @@ PAGE = """<!doctype html>
     High-wind blink (wind or gust &ge; 15 kt)</label>
   <label><input type="checkbox" name="lightning" {% if cfg.lightning %}checked{% endif %}>
     Lightning flash (thunderstorm in the METAR)</label>
+  <label><input type="checkbox" name="use_wipe" {% if cfg.use_wipe %}checked{% endif %}>
+    Use wipe (each update blanks the string briefly, then sweeps in the new data)</label>
   <button type="submit">Save settings</button>
 </form>
 </details>
@@ -732,6 +735,7 @@ def index():
             "night_brightness": max(0, min(100, night_brightness)),
             "high_wind": "high_wind" in request.form,
             "lightning": "lightning" in request.form,
+            "use_wipe": "use_wipe" in request.form,
         })
         with open(CONFIG_FILE, "w") as f:
             json.dump(cfg, f, indent=2)

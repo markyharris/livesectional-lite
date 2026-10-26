@@ -85,6 +85,7 @@ DEFAULT_CONFIG = {
     "night_brightness": 25,   # at night, scale to this % of brightness (0 = off)
     "high_wind": True,
     "lightning": True,
+    "use_wipe": True,         # blank + wipe transition on each update
     "map_on": True,           # master on/off, toggled from the admin page
 }
 
@@ -475,7 +476,12 @@ def run_once(strip, layout, cfg, builder=None):
         return {}
     pct = frame_brightness(cfg, builder, layout)
     colors, symbols = compute_frame(layout, metars, cfg, builder=builder)
-    strip.wipe(colors, pct, symbols)
+    if cfg.get("use_wipe", True):
+        strip.wipe(colors, pct, symbols)
+    elif isinstance(strip, SimStrip):
+        strip.show(colors, pct, symbols)
+    else:
+        strip.show(colors, pct)
     write_status(metars, len(wanted))
     return metars
 
