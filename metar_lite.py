@@ -417,11 +417,22 @@ class SimStrip:
 def make_strip(count):
     try:
         import rpi_ws281x  # noqa: F401
-        log.info("rpi_ws281x found - driving the real strip")
-        return PiStrip(count)
     except ImportError:
         log.info("rpi_ws281x not available - console simulation mode")
         return SimStrip(count)
+    try:
+        strip = PiStrip(count)
+    except RuntimeError as e:
+        # The library is installed but the hardware init failed -
+        # almost always because the process isn't root (ws2811_init
+        # needs /dev/mem). Fall back instead of crashing, so the
+        # --once console test works for an unprivileged user too.
+        log.warning("LED hardware could not be initialised (%s) - "
+                    "console simulation mode; the real strip needs "
+                    "root (sudo)", e)
+        return SimStrip(count)
+    log.info("rpi_ws281x found - driving the real strip")
+    return strip
 
 
 # --------------------------------------------------------------------------

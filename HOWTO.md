@@ -120,14 +120,17 @@ Everything below happens in that terminal.
 
 ```bash
 sudo apt update && sudo apt install -y python3-pip git
-pip3 install --break-system-packages flask rpi_ws281x
+sudo pip3 install --break-system-packages flask rpi_ws281x
 ```
 
 (`git` is the tool Step 3 uses to download the project from GitHub.)
 
-(That `--break-system-packages` flag just tells the Pi's newer Python
-"yes, install system-wide on purpose." It's fine on a single-purpose
-appliance like this.)
+(The `sudo` on the pip line matters: the LED library must be
+installed **system-wide**, because the display service runs as root —
+installed only for your user, root can't see it and the map silently
+falls back to console simulation. The `--break-system-packages` flag
+just tells the Pi's newer Python "yes, install system-wide on
+purpose." It's fine on a single-purpose appliance like this.)
 
 ## Step 3 — Download the project (clone from GitHub)
 
@@ -190,8 +193,11 @@ cd ~/livesectional-lite
 python3 metar_lite.py --once
 ```
 
-You should see a fetch succeed and a line of letters. Now the real thing
-(`sudo` is required — the LED library talks directly to the hardware):
+You should see a fetch succeed and a line of letters. (Run without
+sudo, the test logs "console simulation mode" — that's expected: the
+LED hardware itself needs root, so the unprivileged test only prints
+the letters.) Now the real thing (`sudo` is required — the LED library
+talks directly to the hardware):
 
 ```bash
 sudo python3 metar_lite.py
