@@ -72,11 +72,22 @@ OFF = (0, 0, 0)
 NO_DATA = (32, 32, 32)        # dim white ("silver") - station not reporting
 FLASH_COLOR = (255, 255, 200)  # bright warm white for lightning
 
-# Legend (LGND) LEDs, in airports-file order. The first four are the
-# flight-category legend; the rest mirror the original map's legend row:
-# no-data (dim white), high wind (yellow), lightning (white).
-LEGEND = [COLORS["VFR"], COLORS["MVFR"], COLORS["IFR"], COLORS["LIFR"],
-          NO_DATA, (255, 255, 0), (255, 255, 255)]
+# Legend (LGND) LEDs. A legend position can name its color in the
+# airports file - LGND:VFR, LGND:NODATA, LGND:WIND, LGND:TS - so it
+# always matches the printed legend card next to it, wherever it sits
+# in the file. A bare LGND takes the next color in the LEGEND sequence
+# (the order below, which mirrors the original map's legend row).
+LEGEND_TAGS = {
+    "VFR": COLORS["VFR"],
+    "MVFR": COLORS["MVFR"],
+    "IFR": COLORS["IFR"],
+    "LIFR": COLORS["LIFR"],
+    "NODATA": NO_DATA,
+    "WIND": (255, 255, 0),      # yellow
+    "TS": (255, 255, 255),      # white - thunderstorms in the area
+}
+LEGEND = [LEGEND_TAGS[tag] for tag in
+          ("VFR", "MVFR", "IFR", "LIFR", "NODATA", "WIND", "TS")]
 
 DEFAULT_CONFIG = {
     "brightness": 60,         # percent, 0-100
@@ -343,8 +354,10 @@ def compute_frame(layout, metars, cfg, t=None, builder=None):
     for pos in layout:
         if pos == "NULL":
             colors.append(OFF); symbols.append("."); continue
-        if pos == "LGND":
-            colors.append(LEGEND[legend_i % len(LEGEND)])
+        if pos == "LGND" or pos.startswith("LGND:"):
+            tag = pos[5:] if pos.startswith("LGND:") else ""
+            colors.append(LEGEND_TAGS.get(tag)
+                          or LEGEND[legend_i % len(LEGEND)])
             symbols.append("G"); legend_i += 1; continue
         m = metars.get(pos)
         if m is None:
@@ -471,7 +484,8 @@ def write_status(metars, total):
 # --------------------------------------------------------------------------
 def run_once(strip, layout, cfg, builder=None):
     """One fetch + wipe cycle. Returns the METAR dict ({} on failure)."""
-    wanted = {p for p in layout if p not in ("NULL", "LGND")}
+    wanted = {p for p in layout
+              if p != "NULL" and not p.startswith("LGND")}
     metars = fetch_metars(wanted)
     if metars is None:
         return {}

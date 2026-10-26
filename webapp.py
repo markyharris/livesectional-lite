@@ -122,8 +122,22 @@ PAGE = """<!doctype html>
          size="8" style="text-transform:uppercase" autocomplete="off">
   <button type="submit" name="builder_save" value="1" style="margin-top:0.5em">Save airport</button>
   <p style="margin:0.2em 0 0;color:#555">Station ID as it appears in the METAR
-     data (e.g. KFLG), or NULL for an unused position, LGND for a legend LED.
-     Saving takes effect on the map right away - no restart needed.</p>
+     data (e.g. KFLG), or NULL for an unused position, LGND for a legend LED
+     (a tagged legend like LGND:WIND pins that LED's color - the buttons
+     below set those for you). Saving takes effect on the map right
+     away - no restart needed.</p>
+</form>
+<form method="post">
+  <p style="margin:0.6em 0 0;color:#555">Or make this LED a legend position
+     with a fixed color, so it always matches your printed legend:</p>
+  <button type="submit" name="builder_legend" value="VFR" style="margin-top:0.3em">VFR</button>
+  <button type="submit" name="builder_legend" value="MVFR" style="margin-top:0.3em">MVFR</button>
+  <button type="submit" name="builder_legend" value="IFR" style="margin-top:0.3em">IFR</button>
+  <button type="submit" name="builder_legend" value="LIFR" style="margin-top:0.3em">LIFR</button>
+  <button type="submit" name="builder_legend" value="NODATA" style="margin-top:0.3em">No data</button>
+  <button type="submit" name="builder_legend" value="WIND" style="margin-top:0.3em">Wind</button>
+  <button type="submit" name="builder_legend" value="TS" style="margin-top:0.3em">Storms</button>
+  <button type="submit" name="builder_legend" value="" style="margin-top:0.3em">Plain LGND</button>
 </form>
 {% if uploaded_count %}<p class="saved">Airports file uploaded -
   {{ uploaded_count }} positions loaded.</p>{% endif %}
@@ -464,11 +478,18 @@ def save_builder(state):
         pass
 
 
+LEGEND_TAGS = ("VFR", "MVFR", "IFR", "LIFR", "NODATA", "WIND", "TS")
+
+
 def valid_airport_id(s):
     """Station IDs as they appear in the METAR cache (3-5 characters),
-    plus the two layout keywords."""
-    return s in ("NULL", "LGND") or \
-        re.fullmatch(r"[A-Z0-9]{3,5}", s or "") is not None
+    plus the layout keywords: NULL, LGND, and tagged legend entries
+    (LGND:VFR, LGND:WIND, ...) that pin a legend LED to its color."""
+    if s in ("NULL", "LGND"):
+        return True
+    if (s or "").startswith("LGND:"):
+        return s[5:] in LEGEND_TAGS
+    return re.fullmatch(r"[A-Z0-9]{3,5}", s or "") is not None
 
 
 MAX_AIRPORTS = 2500
@@ -642,7 +663,7 @@ def index():
         # fields, and each ends in a redirect so a refresh can't repeat it.
         if any(k in request.form for k in
                ("builder_toggle", "builder_step", "builder_goto",
-                "builder_save", "builder_upload")):
+                "builder_save", "builder_upload", "builder_legend")):
             entries = load_airports_list()
             b = load_builder(len(entries))
             if "builder_upload" in request.form:
@@ -676,6 +697,16 @@ def index():
                 if entries:
                     b["position"] = max(0, min(len(entries) - 1, pos))
                     b["active"] = True
+            elif "builder_legend" in request.form:
+                tag = (request.form.get("builder_legend")
+                       or "").strip().upper()
+                if not entries or (tag and tag not in LEGEND_TAGS):
+                    return render_page(
+                        cfg, builder_error="That legend choice isn't "
+                        "recognized.")
+                entries[b["position"]] = "LGND:" + tag if tag else "LGND"
+                save_airports_list(entries)
+                b["active"] = True  # keep the light on the saved position
             elif "builder_save" in request.form:
                 new_id = (request.form.get("builder_id")
                           or "").strip().upper()

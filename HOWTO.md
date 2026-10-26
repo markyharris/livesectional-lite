@@ -396,6 +396,13 @@ position at a time, using the physical map as the reference:
    of positions either side, so you can keep your bearings.
 3. Type the station ID for that spot (e.g. `KFLG`), or `NULL` for an
    unused position, `LGND` for a legend LED, and press **Save airport**.
+   For a legend position, the row of legend buttons is easier: tap
+   the one that matches your printed legend card (VFR, MVFR, IFR,
+   LIFR, No data, Wind, Storms — or Plain LGND) and the position is
+   stored with that color pinned to it (e.g. `LGND:WIND`), so the LED
+   always shows its label's color wherever the position sits in the
+   file. A plain `LGND` instead takes the next color in the standard
+   legend sequence (VFR, MVFR, IFR, LIFR, no-data, wind, lightning).
 4. Press **Next** and repeat — stepping lights each new position
    automatically, so you can walk the entire string in order.
 5. When you're done, press **Turn builder light OFF** and the map goes

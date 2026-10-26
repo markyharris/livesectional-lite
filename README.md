@@ -65,9 +65,12 @@ Colors are the standard LiveSectional scheme:
 
 If the XML has no `flight_category` for a station, it's computed from
 visibility and ceiling (lowest BKN/OVC layer) using standard FAA
-thresholds. The first four `LGND` LEDs show the category colors above;
-the remaining legend LEDs show no-data (dim white), high wind (blink),
-and lightning (white), mirroring the original map's legend row.
+thresholds. Legend (`LGND`) LEDs follow the original map's legend row:
+VFR, MVFR, IFR, LIFR, no-data (dim white), high wind (yellow), and
+lightning (white). A legend position can pin its color with a tag -
+`LGND:VFR`, `LGND:NODATA`, `LGND:WIND`, `LGND:TS` - so it always
+matches the printed legend card next to it, wherever it sits in the
+file; a plain `LGND` takes the next color in the sequence above.
 
 ## The four settings
 
@@ -111,6 +114,9 @@ Details:
   the page also shows the line number and the entries on either side.
 - Entries are station IDs as they appear in the METAR data (e.g.
   `KFLG`), or `NULL` for an unused position, `LGND` for a legend LED.
+  Legend positions can be set with one tap from a row of legend
+  buttons (VFR … Storms, or Plain LGND), which store a tagged entry
+  like `LGND:WIND` that pins the LED's color.
 - Saving rewrites `airports` and takes effect on the map right away -
   the display loop reloads the file when it changes (and rebuilds the
   strip if the position count changed). No restart needed.
