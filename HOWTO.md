@@ -372,10 +372,13 @@ port-forward it to the internet.**
 - **Night mode:** between the start and end times, brightness scales to
   the **night brightness** level (a percentage of normal). Set night
   brightness to **0** and the map goes completely off overnight.
-- **High winds:** stations at or above 15 kt (wind or gust) blink;
-  the wind legend LED blinks on the same cycle.
-- **Lightning:** stations reporting thunderstorms flash white; the
-  lightning legend LED uses the same double-flash pattern.
+- **High winds:** stations at or above 15 kt (wind or gust) blink in
+  their own flight-category color; the wind legend LED blinks VFR
+  green on the same cycle.
+- **Lightning:** stations reporting thunderstorms keep their
+  flight-category color and double-flash bright yellow over it; the
+  lightning legend LED uses VFR green as its baseline color for the
+  same pattern.
 - **Use wipe:** each update blanks the string for a beat, then
   sweeps the new data in, so an update is visible even when no color
   changed. Turn it off and new data simply appears.
@@ -401,10 +404,11 @@ position at a time, using the physical map as the reference:
    For a legend position, the row of legend buttons is easier: tap
    the one that matches your printed legend card (VFR, MVFR, IFR,
    LIFR, No data, Wind, Storms — or Plain LGND) and the position is
-   stored with that color pinned to it (e.g. `LGND:WIND`), so the LED
-   always shows its label's color wherever the position sits in the
-   file. A plain `LGND` instead takes the next color in the standard
-   legend sequence (VFR, MVFR, IFR, LIFR, no-data, wind, lightning).
+   stored with that legend role pinned to it (e.g. `LGND:WIND`), so
+   the LED always shows its label's display wherever the position
+   sits in the file. A plain `LGND` instead takes the next role in
+   the standard legend sequence (VFR, MVFR, IFR, LIFR, no-data,
+   wind, lightning).
 4. Press **Next** and repeat — stepping lights each new position
    automatically, so you can walk the entire string in order.
 5. When you're done, press **Turn builder light OFF** and the map goes

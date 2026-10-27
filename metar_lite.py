@@ -70,21 +70,23 @@ COLORS = {
 }
 OFF = (0, 0, 0)
 NO_DATA = (32, 32, 32)        # dim white ("silver") - station not reporting
-FLASH_COLOR = (255, 255, 200)  # bright warm white for lightning
+FLASH_COLOR = (255, 255, 0)    # bright yellow for lightning
 
-# Legend (LGND) LEDs. A legend position can name its color in the
+# Legend (LGND) LEDs. A legend position can name its role in the
 # airports file - LGND:VFR, LGND:NODATA, LGND:WIND, LGND:TS - so it
 # always matches the printed legend card next to it, wherever it sits
-# in the file. A bare LGND takes the next color in the LEGEND sequence
-# (the order below, which mirrors the original map's legend row).
+# in the file. A bare LGND takes the next role in the LEGEND sequence
+# (the order below, which mirrors the original map's legend row). The
+# values below are the steady/display colors; WIND and TS animate in
+# compute_frame when their features are enabled.
 LEGEND_TAGS = {
     "VFR": COLORS["VFR"],
     "MVFR": COLORS["MVFR"],
     "IFR": COLORS["IFR"],
     "LIFR": COLORS["LIFR"],
     "NODATA": NO_DATA,
-    "WIND": (255, 255, 0),      # yellow
-    "TS": (255, 255, 255),      # white - thunderstorms in the area
+    "WIND": COLORS["VFR"],      # blinks VFR green, like a windy VFR airport
+    "TS": FLASH_COLOR,          # bright yellow lightning flash color
 }
 LEGEND_TAG_ORDER = ("VFR", "MVFR", "IFR", "LIFR", "NODATA", "WIND", "TS")
 LEGEND = [LEGEND_TAGS[tag] for tag in LEGEND_TAG_ORDER]
@@ -348,7 +350,10 @@ def compute_frame(layout, metars, cfg, t=None, builder=None):
         # included. Data keeps fetching, so turning it back on is instant.
         return [OFF] * len(layout), ["."] * len(layout)
     blink_on = int(t) % 2 == 0                    # ~1 s high-wind blink cycle
-    flash_on = (t % 1.0) < 0.12 or 0.25 <= (t % 1.0) < 0.37  # double flash
+    # Lightning sequence, in 0.25 s steps: category, category, yellow
+    # flash, category, yellow flash, category - a 1.5 s cycle in which
+    # the flight-category color is the baseline, not darkness or white.
+    flash_on = int(t * 4) % 6 in (2, 4)
     colors, symbols = [], []
     legend_i = 0
     for pos in layout:
@@ -364,11 +369,12 @@ def compute_frame(layout, metars, cfg, t=None, builder=None):
                 # Demonstrate the same ~1 s blink used for a windy airport.
                 color, symbol = OFF, "."
             elif tag == "TS" and cfg.get("lightning"):
-                # Demonstrate the same double flash used for a thunderstorm.
+                # Demonstrate a thunderstorm over a VFR flight category:
+                # VFR green is the baseline, with bright-yellow flashes.
                 if flash_on:
                     color, symbol = FLASH_COLOR, "*"
                 else:
-                    color, symbol = OFF, "."
+                    color, symbol = COLORS["VFR"], "G"
             colors.append(color); symbols.append(symbol)
             legend_i += 1; continue
         m = metars.get(pos)
@@ -378,7 +384,8 @@ def compute_frame(layout, metars, cfg, t=None, builder=None):
             if flash_on:
                 colors.append(FLASH_COLOR); symbols.append("*")
             else:
-                colors.append(OFF); symbols.append(".")
+                colors.append(COLORS[m["category"]])
+                symbols.append(m["category"][0])
             continue
         windy = max(m["wind_kt"] or 0, m["gust_kt"] or 0) >= WIND_THRESHOLD_KT
         if cfg.get("high_wind") and windy and not blink_on:

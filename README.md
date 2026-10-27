@@ -66,16 +66,18 @@ Colors are the standard LiveSectional scheme:
 If the XML has no `flight_category` for a station, it's computed from
 visibility and ceiling (lowest BKN/OVC layer) using standard FAA
 thresholds. Legend (`LGND`) LEDs follow the original map's legend row:
-VFR, MVFR, IFR, LIFR, no-data (dim white), high wind (yellow), and
-lightning (white). A legend position can pin its color with a tag -
+VFR, MVFR, IFR, LIFR, no-data (dim white), a high-wind example, and
+a lightning example. A legend position can pin its role with a tag -
 `LGND:VFR`, `LGND:NODATA`, `LGND:WIND`, `LGND:TS` - so it always
 matches the printed legend card next to it, wherever it sits in the
-file; a plain `LGND` takes the next color in the sequence above. The
-wind and lightning legend examples animate just like airport LEDs:
-when High winds is enabled the wind legend blinks yellow on the same
-~1 s cycle, and when Lightning is enabled the lightning legend uses
-the same white double-flash. If a feature is turned off, its legend
-example stays a steady color instead.
+file; a plain `LGND` takes the next role in the sequence above. The
+wind and lightning legend examples animate like airport LEDs: when
+High winds is enabled the wind legend blinks VFR green (a windy
+airport blinks in its own flight-category color), and when Lightning
+is enabled the lightning legend shows VFR green with a bright-yellow
+double-flash (an airport shows its own flight-category color with
+the same flashes). If a feature is turned off, its legend example
+stays steady instead - green for wind, yellow for lightning.
 
 ## The four settings
 
@@ -87,11 +89,13 @@ display loop on its next cycle:
    22:00–06:00 local) brightness scales to the night level
    (`night_brightness`, default 25% of normal; set it to 0 and the map
    turns completely off overnight).
-3. **High winds** — stations with wind or gust ≥ 15 kt blink on a ~1 s
-   cycle; the wind legend LED blinks with them.
-4. **Lightning** — stations reporting TS/LTNG flash white instead of
-   showing a steady category color; the lightning legend LED uses the
-   same double-flash pattern.
+3. **High winds** — stations with wind or gust ≥ 15 kt blink in their
+   own flight-category color on a ~1 s cycle; the wind legend LED
+   blinks VFR green with them.
+4. **Lightning** — stations reporting TS/LTNG keep their
+   flight-category color as the baseline and double-flash bright
+   yellow over it; the lightning legend LED uses VFR green as its
+   baseline for the same pattern.
 
 After each successful fetch, the string blanks for a beat (~0.5 s),
 then a single wipe sweeps the strip once (~1.5 s) as LEDs switch to
@@ -122,7 +126,7 @@ Details:
   `KFLG`), or `NULL` for an unused position, `LGND` for a legend LED.
   Legend positions can be set with one tap from a row of legend
   buttons (VFR … Storms, or Plain LGND), which store a tagged entry
-  like `LGND:WIND` that pins the LED's color.
+  like `LGND:WIND` that pins the LED's legend role.
 - Saving rewrites `airports` and takes effect on the map right away -
   the display loop reloads the file when it changes (and rebuilds the
   strip if the position count changed). No restart needed.
