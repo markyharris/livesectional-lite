@@ -265,6 +265,7 @@ PAGE = """<!doctype html>
 <p style="color:#888;font-size:0.85em;margin-top:1.8em">Weather data:
 NOAA Aviation Weather Center, refreshed every 5 minutes. Displayed
 conditions are indicative only - not for navigation.</p>
+<p style="text-align:center;color:#888;font-size:0.85em;margin-top:1.2em">LiveSectional Lite &middot; LED METAR map</p>
 <script>
 // Keep the status box current without a page refresh: the display loop
 // fetches every 5 minutes, so poll the server every 30 seconds and swap
