@@ -63,14 +63,21 @@ PAGE = """<!doctype html>
   .sta-grid { display: flex; flex-wrap: wrap; gap: 0.4em 1.1em; margin-top: 0.6em; }
   .sta .dot { display: inline-block; width: 0.72em; height: 0.72em;
               border-radius: 50%; margin-right: 0.35em; vertical-align: -0.05em; }
-  .sta-id { position: relative; border-bottom: 1px dotted #999; }
+  .sta-id { position: relative; border-bottom: 1px dotted #999;
+            cursor: pointer; }
   .sta-id .tip { display: none; position: absolute; left: 0; bottom: 1.5em;
                  z-index: 10; background: #222; color: #eee;
                  padding: 0.5em 0.7em; border-radius: 6px;
                  font-family: monospace; font-size: 0.85em;
-                 white-space: normal; width: max-content; max-width: 24em;
+                 white-space: normal; width: max-content;
+                 max-width: min(24em, 80vw);
                  box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
-  .sta-id:hover .tip { display: block; }
+  .sta-id.open .tip { display: block; }
+  @media (hover: hover) { .sta-id:hover .tip { display: block; } }
+  @media (max-width: 600px) {
+    .sta-id .tip { position: fixed; left: 1em; right: 1em; top: 4em;
+                   bottom: auto; width: auto; max-width: none; }
+  }
 </style>
 <div style="display:flex;align-items:center;gap:0.6em;margin-bottom:0.8em">
   <img src="data:image/png;base64,{{ favicon_b64 }}" alt="" width="52" height="52"
@@ -227,8 +234,8 @@ PAGE = """<!doctype html>
 <details class="section" id="sec-stations">
 <summary style="margin-top:1em"><h2 style="display:inline;margin:0">Stations</h2></summary>
 <p style="color:#555;margin:0.2em 0 0">Every airport on the map with its
-  current flight-category color. Hover an airport ID to see its raw
-  METAR. The list refreshes along with the status box, every 30
+  current flight-category color. Hover or tap an airport ID to see its
+  raw METAR. The list refreshes along with the status box, every 30
   seconds.</p>
 {% if stations %}
 <div class="sta-grid">
@@ -296,6 +303,27 @@ conditions are indicative only - not for navigation.</p>
   }
   setInterval(updateStatus, 30000);
 })();
+</script>
+<script>
+// Station METAR popups: on a mouse, hovering an airport ID shows its
+// popup (CSS). Touch screens have no real hover, so a tap toggles the
+// popup instead - tapping another airport switches to it, tapping
+// anywhere else closes it.
+document.querySelectorAll(".sta-id").forEach(function (el) {
+  el.addEventListener("click", function (ev) {
+    ev.stopPropagation();
+    var wasOpen = el.classList.contains("open");
+    document.querySelectorAll(".sta-id.open").forEach(function (o) {
+      o.classList.remove("open");
+    });
+    if (!wasOpen) el.classList.add("open");
+  });
+});
+document.addEventListener("click", function () {
+  document.querySelectorAll(".sta-id.open").forEach(function (o) {
+    o.classList.remove("open");
+  });
+});
 </script>
 <script>
 // Collapsible sections: remember which ones this browser left open,
