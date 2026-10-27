@@ -29,7 +29,8 @@ the rest:
   the map never goes dark over a network hiccup. Without the LED
   library it runs as a console simulation, so it can be tested on any
   machine before it ever drives a strip.
-- **Updates:** `git pull` and a service restart.
+- **Updates:** `git pull` and a service restart — or one click on
+  the admin page's **Update now** button, which does both itself.
 
 What the original has that Lite does not: TAF and MOS display modes
 (with a rotary-switch input to select between data types), a heat-map
@@ -106,7 +107,9 @@ Running more than one map? The admin page also takes an optional
 **map name**, shown in the page header and the browser tab so maps
 stay easy to tell apart; the status box shows the Pi's hostname and
 IP address. The status box also flags **"Update available"** when
-the Pi's copy is behind the GitHub repository (checked hourly).
+the Pi's copy is behind the GitHub repository (checked hourly);
+its **Update now** button pulls and restarts both services itself,
+and the box prints the manual commands too.
 
 ## Map Builder
 

@@ -293,8 +293,11 @@ come back after every reboot with nobody logged in and nothing typed.**
 ## Step 7 — Let the web page's power buttons work (one-time)
 
 The admin page has **Reboot** and **Shutdown** buttons. They run through
-passwordless sudo scoped to a short list of commands. This one line also
-gives *you* password-free restarts of the map services from the terminal:
+passwordless sudo scoped to a short list of commands. The `systemctl`
+entries in the same line are also what the status box's **Update now**
+button uses to restart the two services after it pulls an update. This
+one line also gives *you* password-free restarts of the map services
+from the terminal:
 
 ```bash
 ME=$(whoami)
@@ -492,6 +495,13 @@ the number of new commits whenever the Pi is behind — the line
 includes the exact commands to run (the pull, with this Pi's folder
 path, and the service restart, with this Pi's service names).
 Nothing shows when the Pi is current.
+
+The easy way is the **Update now** button in that same box: it pulls
+and restarts both services itself, and the page reloads when the
+update is done. If the pull stops — say a local change is in the
+way — nothing is restarted, and the box shows what git said. (The
+button relies on the Step 7 sudoers line; without it, the box says
+so.) The commands below remain for doing it by hand.
 
 **Getting improvements onto your Pi (pull):**
 

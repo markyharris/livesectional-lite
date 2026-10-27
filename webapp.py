@@ -97,9 +97,18 @@ PAGE = """<!doctype html>
      <span title="IFR" style="color:#ff0000;font-size:1.6em;vertical-align:-0.12em">&#9679;</span> <span id="st-ifr">{{ status.counts.IFR }}</span>
      <span title="LIFR" style="color:#e600e6;font-size:1.6em;vertical-align:-0.12em">&#9679;</span> <span id="st-lifr">{{ status.counts.LIFR }}</span></p>
   <p>Pi: <strong>{{ host_name }}</strong>{% if host_ip %} &middot; {{ host_ip }}{% endif %}</p>
-  <p id="st-update" style="{% if not update_behind %}display:none;{% endif %}color:#8a6d00;background:#fff3cd;padding:0.4em 0.6em;border-radius:4px">Update available: <strong id="st-behind">{{ update_behind }}</strong> new commit(s) on GitHub. To update, run:<br>
+  <div id="st-update" style="{% if not update_behind and not update_error and not update_failed %}display:none;{% endif %}color:#8a6d00;background:#fff3cd;padding:0.4em 0.6em;border-radius:4px">
+  <p style="margin:0.2em 0">Update available: <strong id="st-behind">{{ update_behind }}</strong> new commit(s) on GitHub.</p>
+  <form method="post" onsubmit="return confirm('Update now? The Pi will pull the new code and restart both map services; this page reloads itself when the update is done.')">
+    <input type="hidden" name="update_apply" value="1">
+    <button type="submit" style="margin:0.2em 0">Update now</button>
+  </form>
+  {% if update_error %}<p style="color:#b00;margin:0.3em 0">{{ update_error }}</p>{% endif %}
+  {% if update_failed %}<p style="color:#b00;margin:0.3em 0">The last update attempt failed: {{ update_failed }}</p>{% endif %}
+  <p style="margin:0.3em 0 0.1em">Or update by hand:<br>
   <code>{{ update_cmd_pull }}</code><br>
   <code>{{ update_cmd_restart }}</code></p>
+  </div>
   <p style="color:#555;margin-bottom:0">This status box updates itself
      every 30 seconds - no need to refresh the page.</p>
   {% if saved %}<p class="saved" style="margin-bottom:0">Settings saved.</p>{% endif %}
@@ -546,6 +555,11 @@ def check_for_update():
         out = _git("rev-list", "--count", "HEAD..origin/main")
         if out.returncode == 0:
             UPDATE_STATE["behind"] = int(out.stdout.strip() or 0)
+            if UPDATE_STATE["behind"] == 0 and \
+                    UPDATE_RUN["state"] == "failed":
+                # Current again (the update landed, or was pulled by
+                # hand): the old failure note no longer applies.
+                UPDATE_RUN.update(state="idle", detail="")
     except (OSError, ValueError, subprocess.TimeoutExpired):
         pass
 
@@ -554,6 +568,80 @@ def _update_watcher():
     while True:
         check_for_update()
         time.sleep(3600)
+
+
+# ---------------------------------------------------------------------------
+# One-click update
+#
+# The "Update now" button in the amber box runs the same two steps the
+# box prints for doing it by hand: git pull, then restart both
+# services. The pull needs no privilege (the web service user owns the
+# files and already runs git for the check above); the restarts go
+# through the same passwordless-sudo setup as the power buttons - the
+# documented sudoers line already grants systemctl on the map's
+# services. The work runs in a background thread after the page has
+# answered, display service first and the web service last (restarting
+# it ends this process, which is the success path). A failed pull stops
+# everything, restarts nothing, and records the reason here for the
+# page to show.
+# ---------------------------------------------------------------------------
+UPDATE_RUN = {"state": "idle", "detail": "", "started": 0.0}
+
+
+def _restart_permitted():
+    """True if passwordless sudo allows restarting both services.
+    Probed with `sudo -l`, which reports permission for that exact
+    command without running anything."""
+    for svc in (_display_service_name(), web_service_name()):
+        try:
+            r = subprocess.run(["/usr/bin/sudo", "-n", "-l",
+                                "/bin/systemctl", "restart", svc],
+                               capture_output=True, timeout=5)
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+        if r.returncode != 0:
+            return False
+    return True
+
+
+def _do_update():
+    try:
+        pull = _git("pull", "--ff-only")
+        if pull.returncode != 0:
+            out = (pull.stderr or pull.stdout or "").strip()
+            UPDATE_RUN.update(
+                state="failed",
+                detail=out.splitlines()[-1] if out else "git pull failed")
+            return
+        UPDATE_RUN.update(state="restarting", detail="")
+        for svc in (_display_service_name(), web_service_name()):
+            subprocess.run(["/usr/bin/sudo", "-n", "/bin/systemctl",
+                            "restart", svc],
+                           capture_output=True, timeout=60)
+        UPDATE_RUN.update(state="done", detail="")
+    except (OSError, subprocess.TimeoutExpired) as e:
+        UPDATE_RUN.update(state="failed", detail=str(e))
+
+
+UPDATE_PAGE = """<!doctype html>
+<title>LiveSectional Lite - Updating</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<body style="font-family:sans-serif;max-width:34em;margin:2em auto;padding:0 1em">
+<h1>Updating&hellip;</h1>
+<p>The Pi is pulling the new code and restarting the map's services.
+This page reloads itself once the admin page answers again; if the
+update hit a problem, the page will say what happened.</p>
+<p><a href="/">Reload now</a></p>
+<script>
+setTimeout(function () {
+  var iv = setInterval(function () {
+    fetch("/api/status").then(function (r) {
+      if (r.ok) { clearInterval(iv); location.href = "/"; }
+    }).catch(function () { /* not back yet - keep waiting */ });
+  }, 5000);
+}, 10000);
+</script>
+</body>"""
 
 
 def _service_from_cgroup(text):
@@ -570,6 +658,11 @@ def web_service_name():
             return _service_from_cgroup(f.read())
     except OSError:
         return "livesectional-lite-web"
+
+
+def _display_service_name():
+    web = web_service_name()
+    return web[:-4] if web.endswith("-web") else web
 
 
 def valid_time(s, fallback):
@@ -789,10 +882,10 @@ def favicon():
 
 
 def render_page(cfg, saved=False, power_error=None, builder_error=None,
-                uploaded_count=0):
+                uploaded_count=0, update_error=None):
     host_name, host_ip = host_info()
     web_svc = web_service_name()
-    disp_svc = web_svc[:-4] if web_svc.endswith("-web") else web_svc
+    disp_svc = _display_service_name()
     return render_template_string(
         PAGE, cfg=cfg, status=load_status(), saved=saved,
         favicon_b64=FAVICON_B64, host_name=host_name, host_ip=host_ip,
@@ -801,6 +894,9 @@ def render_page(cfg, saved=False, power_error=None, builder_error=None,
         update_cmd_restart=f"sudo systemctl restart {disp_svc} {web_svc}",
         power_error=power_error, builder_error=builder_error,
         uploaded_count=uploaded_count, stations=station_rows(),
+        update_error=update_error,
+        update_failed=UPDATE_RUN["detail"]
+        if UPDATE_RUN["state"] == "failed" else None,
         **builder_context())
 
 
@@ -869,6 +965,24 @@ def index():
                 b["active"] = True  # keep the light on the saved position
             save_builder(b)
             return redirect(url_for("index"))
+        if "update_apply" in request.form:
+            if UPDATE_STATE["behind"] <= 0:
+                return redirect(url_for("index"))
+            if UPDATE_RUN["state"] in ("running", "restarting") and \
+                    time.time() - UPDATE_RUN["started"] < 600:
+                return render_template_string(UPDATE_PAGE)
+            if not _restart_permitted():
+                return render_page(
+                    cfg, update_error="One-click update isn't permitted "
+                    "for the web service user yet - the one-time "
+                    "sudoers setup in HOWTO.md (Step 7) covers it, or "
+                    "run the commands in the box by hand.")
+            UPDATE_RUN.update(state="running", detail="",
+                              started=time.time())
+            # Delay so this response reaches the browser before the
+            # pull and the service restarts begin.
+            threading.Timer(1.0, _do_update).start()
+            return render_template_string(UPDATE_PAGE)
         kind = request.form.get("power")
         if kind in ("reboot", "shutdown"):
             if not _sudo_ready():
