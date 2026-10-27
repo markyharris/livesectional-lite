@@ -22,8 +22,8 @@ the rest:
   per-station API queries. The `airports` layout file is shared with
   the original, unchanged.
 - **Interface:** one admin page — status, settings, power buttons,
-  and the map builder — instead of many configuration pages and
-  editors. The LED count is simply the number of lines in `airports`;
+  a station list with raw METARs, and the map builder — instead of
+  many configuration pages and editors. The LED count is simply the number of lines in `airports`;
   there is nothing else to dimension.
 - **Failure behavior:** a failed fetch keeps the last good frame lit;
   the map never goes dark over a network hiccup. Without the LED

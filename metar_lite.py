@@ -263,6 +263,7 @@ def fetch_metars(wanted):
             "vis": vis,
             "wx": wx,
             "category": category,
+            "raw": _text(el, "raw_text") or "",
         }
     log.info("cache ok: %d of %d mapped stations reporting",
              len(metars), len(wanted))
@@ -490,6 +491,11 @@ def write_status(metars, total):
         "stations_reporting": len(metars),
         "stations_total": total,
         "counts": counts,  # reporting stations per flight category
+        # Per-station detail for the admin page's Stations section:
+        # category color per airport, raw METAR on hover.
+        "stations": {sid: {"category": m["category"],
+                            "raw": m.get("raw", "")}
+                     for sid, m in metars.items()},
     }
     try:
         with open(STATUS_FILE, "w") as f:

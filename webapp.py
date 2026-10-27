@@ -2,7 +2,8 @@
 """webapp.py - LiveSectional Lite web admin.
 
 One page: current status (last fetch, stations reporting), the display
-settings form, power buttons, and a map builder that lights one LED at
+settings form, power buttons, a station list (category color per
+airport, raw METAR on hover), and a map builder that lights one LED at
 a time while you edit the airports file. Saving settings writes
 config.json; the display loop (metar_lite.py) re-reads it every cycle
 and picks up the changes. Builder edits write the airports file and
@@ -59,6 +60,17 @@ PAGE = """<!doctype html>
   hr { border: none; border-top: 1px solid #ccc; margin: 1.8em 0 0; }
   details.section { margin: 0.2em 0; }
   summary { cursor: pointer; }
+  .sta-grid { display: flex; flex-wrap: wrap; gap: 0.4em 1.1em; margin-top: 0.6em; }
+  .sta .dot { display: inline-block; width: 0.72em; height: 0.72em;
+              border-radius: 50%; margin-right: 0.35em; vertical-align: -0.05em; }
+  .sta-id { position: relative; border-bottom: 1px dotted #999; }
+  .sta-id .tip { display: none; position: absolute; left: 0; bottom: 1.5em;
+                 z-index: 10; background: #222; color: #eee;
+                 padding: 0.5em 0.7em; border-radius: 6px;
+                 font-family: monospace; font-size: 0.85em;
+                 white-space: normal; width: max-content; max-width: 24em;
+                 box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+  .sta-id:hover .tip { display: block; }
 </style>
 <div style="display:flex;align-items:center;gap:0.6em;margin-bottom:0.8em">
   <img src="data:image/png;base64,{{ favicon_b64 }}" alt="" width="52" height="52"
@@ -211,6 +223,23 @@ PAGE = """<!doctype html>
   <button type="submit">Save settings</button>
 </form>
 </details>
+<hr>
+<details class="section" id="sec-stations">
+<summary style="margin-top:1em"><h2 style="display:inline;margin:0">Stations</h2></summary>
+<p style="color:#555;margin:0.2em 0 0">Every airport on the map with its
+  current flight-category color. Hover an airport ID to see its raw
+  METAR. The list refreshes along with the status box, every 30
+  seconds.</p>
+{% if stations %}
+<div class="sta-grid">
+{% for s in stations %}
+  <span class="sta" data-sid="{{ s.id }}"><span class="dot" title="{{ s.category }}" style="background:{{ s.hex }}"></span><span class="sta-id">{{ s.id }}<span class="tip">{{ s.tip }}</span></span></span>
+{% endfor %}
+</div>
+{% else %}
+<p style="color:#555">No airports file found yet.</p>
+{% endif %}
+</details>
 <p style="color:#888;font-size:0.85em;margin-top:1.8em">Weather data:
 NOAA Aviation Weather Center, refreshed every 5 minutes. Displayed
 conditions are indicative only - not for navigation.</p>
@@ -224,6 +253,24 @@ conditions are indicative only - not for navigation.</p>
     var el = document.getElementById(id);
     if (el) el.textContent = value;
   }
+  var CAT_HEX = { VFR: "#00b050", MVFR: "#0066ff", IFR: "#ff0000",
+                  LIFR: "#e600e6" };
+  function updateStations(stations) {
+    document.querySelectorAll(".sta").forEach(function (row) {
+      var info = stations ? stations[row.getAttribute("data-sid")] : null;
+      var dot = row.querySelector(".dot");
+      var tip = row.querySelector(".tip");
+      if (info && CAT_HEX[info.category]) {
+        if (dot) { dot.style.background = CAT_HEX[info.category];
+                   dot.title = info.category; }
+        if (tip) tip.textContent = info.raw ||
+            "No METAR text in the latest report.";
+      } else {
+        if (dot) { dot.style.background = "#c0c0c0"; dot.title = "No data"; }
+        if (tip) tip.textContent = "No METAR received in the latest fetch.";
+      }
+    });
+  }
   function updateStatus() {
     fetch("/api/status").then(function (r) { return r.json(); })
       .then(function (s) {
@@ -235,6 +282,7 @@ conditions are indicative only - not for navigation.</p>
         setText("st-mvfr", s.counts.MVFR);
         setText("st-ifr", s.counts.IFR);
         setText("st-lifr", s.counts.LIFR);
+        updateStations(s.stations);
         var upd = document.getElementById("st-update");
         if (upd) {
           if (s.update_available) {
@@ -368,7 +416,47 @@ def load_status():
             except (TypeError, ValueError):
                 pass
     status["counts"] = counts
+    # Per-station detail (older status files may not have it yet)
+    stations = {}
+    if isinstance(status.get("stations"), dict):
+        for sid, info in status["stations"].items():
+            if isinstance(info, dict):
+                stations[str(sid)] = {
+                    "category": str(info.get("category") or ""),
+                    "raw": str(info.get("raw") or ""),
+                }
+    status["stations"] = stations
     return status
+
+
+CATEGORY_HEX = {"VFR": "#00b050", "MVFR": "#0066ff", "IFR": "#ff0000",
+                "LIFR": "#e600e6"}
+NO_DATA_HEX = "#c0c0c0"  # silver, matching the map's no-data LED
+
+
+def station_rows():
+    """Rows for the Stations section: every airport on the map, in
+    airports-file order (a station listed twice appears once; NULL and
+    LGND positions are not airports), each with its current category
+    color and the text for its hover popup - the raw METAR, or a note
+    when the station did not report."""
+    reporting = load_status()["stations"]
+    rows, seen = [], set()
+    for entry in load_airports_list():
+        if entry in seen or entry == "NULL" or entry.startswith("LGND"):
+            continue
+        seen.add(entry)
+        info = reporting.get(entry)
+        if info and info["category"] in CATEGORY_HEX:
+            rows.append({"id": entry, "category": info["category"],
+                         "hex": CATEGORY_HEX[info["category"]],
+                         "tip": info["raw"] or
+                                "No METAR text in the latest report."})
+        else:
+            rows.append({"id": entry, "category": "No data",
+                         "hex": NO_DATA_HEX,
+                         "tip": "No METAR received in the latest fetch."})
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -622,6 +710,7 @@ def api_status():
         "stations_reporting": status.get("stations_reporting", 0),
         "stations_total": status.get("stations_total", 0),
         "counts": status["counts"],
+        "stations": status["stations"],
         "map_on": bool(load_config().get("map_on", True)),
         "update_available": UPDATE_STATE["behind"] > 0,
         "commits_behind": UPDATE_STATE["behind"],
@@ -651,7 +740,7 @@ def render_page(cfg, saved=False, power_error=None, builder_error=None,
         update_cmd_pull=f"cd {HERE} && git pull",
         update_cmd_restart=f"sudo systemctl restart {disp_svc} {web_svc}",
         power_error=power_error, builder_error=builder_error,
-        uploaded_count=uploaded_count,
+        uploaded_count=uploaded_count, stations=station_rows(),
         **builder_context())
 
 

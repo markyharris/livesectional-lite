@@ -357,11 +357,15 @@ port-forward it to the internet.**
   LEDs currently lit in that color (the dots' tooltips name the
   categories: VFR, MVFR, IFR, LIFR). A **Pi** line at the bottom shows
   the Pi's hostname and IP address.
-- **Collapsible sections:** the Map Builder, Power and Settings
-  sections start closed — click a section's header to open it (the
+- **Collapsible sections:** the Map Builder, Power, Settings and
+  Stations sections start closed — click a section's header to open it (the
   status box always stays visible). The page remembers, in this
   browser, which sections you left open; a section also opens on its
   own when it has something to show you, like a builder error.
+- **Stations section:** every airport on the map, each with a dot in
+  its current flight-category color (silver when the station hasn't
+  reported). Hover an airport ID to see its raw METAR. The list
+  refreshes along with the status box, every 30 seconds.
 - **Map on/off button:** in the Power section — turns every LED
   (including the legend) dark while weather keeps fetching, so
   turning it back on is instant. The setting survives reboots.
