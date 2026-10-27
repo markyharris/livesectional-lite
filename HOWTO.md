@@ -441,6 +441,16 @@ Your previous list is kept as `airports.bak` in the same folder, so if
 you upload the wrong file you can copy it back
 (`cp airports.bak airports`).
 
+**Compatibility runs one way.** An `airports` file from the original
+LiveSectional works in Lite unchanged — but once a file uses Lite's
+tagged legend entries (`LGND:WIND`, `LGND:TS`, and the rest), it no
+longer works in the original. The original recognizes only the exact
+word `LGND`; it reads a tagged line as a station ID, finds no weather
+for it, and lights that position with its no-weather color. Nothing
+crashes and the airport positions still work — but the legend
+positions show the wrong thing, silently. If you run maps on both
+programs, keep a bare-`LGND` copy of the file for the original.
+
 ## How it works (30-second version)
 
 Every 5 minutes the display downloads **one** file from the Aviation
