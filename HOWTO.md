@@ -364,8 +364,9 @@ port-forward it to the internet.**
   own when it has something to show you, like a builder error.
 - **Stations section:** every airport on the map, each with a dot in
   its current flight-category color (silver when the station hasn't
-  reported). Hover or tap an airport ID to see its raw METAR. The list
-  refreshes along with the status box, every 30 seconds.
+  reported). Hover or tap an airport ID to see its raw METAR. A filter
+  box at the top narrows the list as you type — worth having on a big
+  map. The list refreshes along with the status box, every 30 seconds.
 - **Map on/off button:** in the Power section — turns every LED
   (including the legend) dark while weather keeps fetching, so
   turning it back on is instant. The setting survives reboots.

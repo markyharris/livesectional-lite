@@ -73,6 +73,8 @@ PAGE = """<!doctype html>
                  max-width: min(24em, 80vw);
                  box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
   .sta-id.open .tip { display: block; }
+  #sta-filter { padding: 0.35em 0.5em; font-size: 1em; width: 12em;
+                max-width: 100%; }
   @media (hover: hover) { .sta-id:hover .tip { display: block; } }
   @media (max-width: 600px) {
     .sta-id .tip { position: fixed; left: 1em; right: 1em; top: 4em;
@@ -238,11 +240,15 @@ PAGE = """<!doctype html>
   raw METAR. The list refreshes along with the status box, every 30
   seconds.</p>
 {% if stations %}
+<p style="margin:0.6em 0 0"><input type="search" id="sta-filter"
+  placeholder="Filter by airport ID" autocomplete="off">
+  <span id="sta-count" style="color:#555">{{ stations|length }} airports</span></p>
 <div class="sta-grid">
 {% for s in stations %}
   <span class="sta" data-sid="{{ s.id }}"><span class="dot" title="{{ s.category }}" style="background:{{ s.hex }}"></span><span class="sta-id">{{ s.id }}<span class="tip">{{ s.tip }}</span></span></span>
 {% endfor %}
 </div>
+<p id="sta-nomatch" style="display:none;color:#555">No airports match that filter.</p>
 {% else %}
 <p style="color:#555">No airports file found yet.</p>
 {% endif %}
@@ -324,6 +330,32 @@ document.addEventListener("click", function () {
     o.classList.remove("open");
   });
 });
+</script>
+<script>
+// Stations filter: as you type, narrow the list to airport IDs that
+// contain the text (handy on a big map), and keep the count honest.
+// Clearing the box brings the whole list back. The 30-second refresh
+// only touches dots and popups, so it never fights the filter.
+(function () {
+  var box = document.getElementById("sta-filter");
+  if (!box) return;
+  var rows = document.querySelectorAll(".sta");
+  var count = document.getElementById("sta-count");
+  var nomatch = document.getElementById("sta-nomatch");
+  box.addEventListener("input", function () {
+    var q = box.value.trim().toUpperCase();
+    var shown = 0;
+    rows.forEach(function (row) {
+      var hit = !q || row.getAttribute("data-sid").indexOf(q) !== -1;
+      row.style.display = hit ? "" : "none";
+      if (hit) shown++;
+    });
+    if (count) count.textContent = q
+      ? shown + " of " + rows.length + " airports"
+      : rows.length + " airports";
+    if (nomatch) nomatch.style.display = shown ? "none" : "";
+  });
+})();
 </script>
 <script>
 // Collapsible sections: remember which ones this browser left open,
