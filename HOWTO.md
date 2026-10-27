@@ -372,8 +372,10 @@ port-forward it to the internet.**
 - **Night mode:** between the start and end times, brightness scales to
   the **night brightness** level (a percentage of normal). Set night
   brightness to **0** and the map goes completely off overnight.
-- **High winds:** stations at or above 15 kt (wind or gust) blink.
-- **Lightning:** stations reporting thunderstorms flash white.
+- **High winds:** stations at or above 15 kt (wind or gust) blink;
+  the wind legend LED blinks on the same cycle.
+- **Lightning:** stations reporting thunderstorms flash white; the
+  lightning legend LED uses the same double-flash pattern.
 - **Use wipe:** each update blanks the string for a beat, then
   sweeps the new data in, so an update is visible even when no color
   changed. Turn it off and new data simply appears.

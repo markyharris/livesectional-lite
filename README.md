@@ -70,7 +70,12 @@ VFR, MVFR, IFR, LIFR, no-data (dim white), high wind (yellow), and
 lightning (white). A legend position can pin its color with a tag -
 `LGND:VFR`, `LGND:NODATA`, `LGND:WIND`, `LGND:TS` - so it always
 matches the printed legend card next to it, wherever it sits in the
-file; a plain `LGND` takes the next color in the sequence above.
+file; a plain `LGND` takes the next color in the sequence above. The
+wind and lightning legend examples animate just like airport LEDs:
+when High winds is enabled the wind legend blinks yellow on the same
+~1 s cycle, and when Lightning is enabled the lightning legend uses
+the same white double-flash. If a feature is turned off, its legend
+example stays a steady color instead.
 
 ## The four settings
 
@@ -83,9 +88,10 @@ display loop on its next cycle:
    (`night_brightness`, default 25% of normal; set it to 0 and the map
    turns completely off overnight).
 3. **High winds** — stations with wind or gust ≥ 15 kt blink on a ~1 s
-   cycle.
+   cycle; the wind legend LED blinks with them.
 4. **Lightning** — stations reporting TS/LTNG flash white instead of
-   showing a steady category color.
+   showing a steady category color; the lightning legend LED uses the
+   same double-flash pattern.
 
 After each successful fetch, the string blanks for a beat (~0.5 s),
 then a single wipe sweeps the strip once (~1.5 s) as LEDs switch to

@@ -86,8 +86,8 @@ LEGEND_TAGS = {
     "WIND": (255, 255, 0),      # yellow
     "TS": (255, 255, 255),      # white - thunderstorms in the area
 }
-LEGEND = [LEGEND_TAGS[tag] for tag in
-          ("VFR", "MVFR", "IFR", "LIFR", "NODATA", "WIND", "TS")]
+LEGEND_TAG_ORDER = ("VFR", "MVFR", "IFR", "LIFR", "NODATA", "WIND", "TS")
+LEGEND = [LEGEND_TAGS[tag] for tag in LEGEND_TAG_ORDER]
 
 DEFAULT_CONFIG = {
     "brightness": 60,         # percent, 0-100
@@ -356,9 +356,21 @@ def compute_frame(layout, metars, cfg, t=None, builder=None):
             colors.append(OFF); symbols.append("."); continue
         if pos == "LGND" or pos.startswith("LGND:"):
             tag = pos[5:] if pos.startswith("LGND:") else ""
-            colors.append(LEGEND_TAGS.get(tag)
-                          or LEGEND[legend_i % len(LEGEND)])
-            symbols.append("G"); legend_i += 1; continue
+            if tag not in LEGEND_TAGS:
+                tag = LEGEND_TAG_ORDER[legend_i % len(LEGEND_TAG_ORDER)]
+            color = LEGEND_TAGS[tag]
+            symbol = "G"
+            if tag == "WIND" and cfg.get("high_wind") and not blink_on:
+                # Demonstrate the same ~1 s blink used for a windy airport.
+                color, symbol = OFF, "."
+            elif tag == "TS" and cfg.get("lightning"):
+                # Demonstrate the same double flash used for a thunderstorm.
+                if flash_on:
+                    color, symbol = FLASH_COLOR, "*"
+                else:
+                    color, symbol = OFF, "."
+            colors.append(color); symbols.append(symbol)
+            legend_i += 1; continue
         m = metars.get(pos)
         if m is None:
             colors.append(NO_DATA); symbols.append("N"); continue
