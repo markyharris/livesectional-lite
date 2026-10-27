@@ -377,7 +377,7 @@ port-forward it to the internet.**
   green on the same cycle.
 - **Lightning:** stations reporting thunderstorms keep their
   flight-category color and double-flash bright yellow over it; the
-  lightning legend LED uses VFR green as its baseline color for the
+  lightning legend LED uses IFR red as its baseline color for the
   same pattern.
 - **Use wipe:** each update blanks the string for a beat, then
   sweeps the new data in, so an update is visible even when no color

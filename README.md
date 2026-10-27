@@ -74,7 +74,7 @@ file; a plain `LGND` takes the next role in the sequence above. The
 wind and lightning legend examples animate like airport LEDs: when
 High winds is enabled the wind legend blinks VFR green (a windy
 airport blinks in its own flight-category color), and when Lightning
-is enabled the lightning legend shows VFR green with a bright-yellow
+is enabled the lightning legend shows IFR red with a bright-yellow
 double-flash (an airport shows its own flight-category color with
 the same flashes). If a feature is turned off, its legend example
 stays steady instead - green for wind, yellow for lightning.
@@ -94,7 +94,7 @@ display loop on its next cycle:
    blinks VFR green with them.
 4. **Lightning** — stations reporting TS/LTNG keep their
    flight-category color as the baseline and double-flash bright
-   yellow over it; the lightning legend LED uses VFR green as its
+   yellow over it; the lightning legend LED uses IFR red as its
    baseline for the same pattern.
 
 After each successful fetch, the string blanks for a beat (~0.5 s),

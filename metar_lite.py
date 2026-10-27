@@ -369,12 +369,12 @@ def compute_frame(layout, metars, cfg, t=None, builder=None):
                 # Demonstrate the same ~1 s blink used for a windy airport.
                 color, symbol = OFF, "."
             elif tag == "TS" and cfg.get("lightning"):
-                # Demonstrate a thunderstorm over a VFR flight category:
-                # VFR green is the baseline, with bright-yellow flashes.
+                # Demonstrate a thunderstorm over an IFR flight category:
+                # IFR red is the baseline, with bright-yellow flashes.
                 if flash_on:
                     color, symbol = FLASH_COLOR, "*"
                 else:
-                    color, symbol = COLORS["VFR"], "G"
+                    color, symbol = COLORS["IFR"], "G"
             colors.append(color); symbols.append(symbol)
             legend_i += 1; continue
         m = metars.get(pos)
