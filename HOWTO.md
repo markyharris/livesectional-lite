@@ -551,6 +551,45 @@ One consequence worth knowing: because nothing syncs automatically, a
 Pi that is never pulled stays exactly as it was — which is fine. Update
 when there's something you want, not on a schedule.
 
+## Rehoming the map (gifting it, or moving to a new network)
+
+A built map knows exactly one WiFi network: the one it was set up on.
+Gift the map or move it to a new house and it cannot get online — and
+there's no keyboard or screen on a wall map to tell it the new
+credentials.
+
+The fix is a one-time install of **Comitup**, a small service that
+manages the Pi's WiFi: whenever the Pi can't join a network it knows,
+it raises its own setup access point with a captive-portal page, and
+the new owner joins that network with a phone, picks their home WiFi
+from a list, and types its password. No Lite code changes; it's a
+package install plus one small config file, and it can be removed
+with a single command. Full install steps, config, and the reasoning
+are in **WIFI-PROVISIONING.md** in this repository.
+
+**Before you hand the map over:**
+
+1. Delete your home connection on the Pi (`comitup-cli`, then `d`) so
+   your WiFi password doesn't travel with the card. With no known
+   networks left, the map boots straight into its setup access point
+   at the new house.
+2. Make sure the `airports` list and settings on the map are the ones
+   the recipient should have — provisioning only changes WiFi.
+3. Put the setup network's name and password (from your
+   `/etc/comitup.conf`) on a card in the box with the map.
+
+**At the new house:** hang the map, plug it in, wait a minute or two,
+join the setup network on a phone, and the sign-in page opens by
+itself (if it doesn't, browse to **10.41.0.1**). Pick the home
+network, enter its password, tap Connect — the setup network
+disappearing means it worked, and the map starts lighting up with
+live weather within a few minutes. The step-by-step recipient flow
+is in WIFI-PROVISIONING.md.
+
+(Without Comitup installed, changing networks means connecting a
+keyboard or Ethernet cable and editing the WiFi settings on the Pi
+itself — the provisioning install is what removes that step.)
+
 ## Security notes
 
 - The web admin has **no password** — anyone on your network who can
