@@ -16,6 +16,7 @@ import gzip
 import json
 import logging
 import os
+import socket
 import time
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -402,6 +403,144 @@ def scale(color, brightness_pct):
 
 
 # --------------------------------------------------------------------------
+# The blink code: the admin address, spoken in light
+#
+# Standing rule (Nov 16, 2026): a connected device says where its
+# admin page lives. A strip map has no screen, so after a boot-time
+# join, before the first weather frame, LED 0 blinks the last octet
+# of the Pi's IP address, digit by digit: a digit is that many short
+# blinks, zero is one long blink, and each digit position has its own
+# colour - white, amber, violet - so the position is unmistakable
+# even mid-sequence. The whole sequence repeats three times, then
+# the LED returns to weather duty. Colours here are logical (R, G, B);
+# the strip's own show() path (scale + setPixelColorRGB, GRB wire
+# order in the library) puts them on the wire correctly. Same code,
+# same timings as the ESP32 Micro map.
+# --------------------------------------------------------------------------
+BLINK_LED_INDEX = 0           # the first LED on the string speaks
+BLINK_COLORS = ((255, 255, 255), (255, 160, 0), (148, 0, 211))
+BLINK_ON_MS = 300             # one short blink
+BLINK_ZERO_MS = 900           # zero: one long blink
+BLINK_GAP_MS = 250            # dark beat between blinks of one digit
+BLINK_DIGIT_GAP_MS = 900      # pause between digits
+BLINK_REPEAT_GAP_MS = 2500    # longer pause between repeats
+BLINK_REPEATS = 3
+BLINK_BRIGHTNESS = 60         # percent: clearly visible, not a glare
+IP_WAIT_SECONDS = 60          # boot wait for the network to come up
+COMITUP_AP_IP = "10.41.0.1"   # Comitup's setup-AP address: the map is
+                              # mid-rehome then, not joined - never
+                              # blink it as if it were the address
+
+
+def local_ip():
+    """This Pi's LAN address, or "" when it is not on a network. A
+    UDP 'connect' to a public IP sends no packet; the socket just
+    reveals which local address would be used. Comitup's setup-AP
+    address does not count (see COMITUP_AP_IP)."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+        finally:
+            s.close()
+    except OSError:
+        return ""
+    if ip.startswith("127.") or ip == COMITUP_AP_IP:
+        return ""
+    return ip
+
+
+def wait_for_ip(timeout=IP_WAIT_SECONDS):
+    """Poll local_ip() until the Pi has joined a network or the
+    timeout passes. Returns the address, or "" - the caller treats
+    "" as 'stay silent', never as an error."""
+    deadline = time.time() + timeout
+    while True:
+        ip = local_ip()
+        if ip:
+            return ip
+        if time.time() >= deadline:
+            return ""
+        time.sleep(2)
+
+
+def _blink_schedule(ip):
+    """The blink code for an IP address, as a list of (color, ms)
+    events: a color tuple lights the LED for that long, None is a
+    dark pause. Only the last octet is spoken - the owner knows
+    their own network's first three numbers; the last one is the
+    part that changes from map to map. The full sequence repeats
+    BLINK_REPEATS times. An address that does not parse yields no
+    events: silence, never a wrong address."""
+    try:
+        octet = int(ip.split(".")[3])
+    except (AttributeError, IndexError, ValueError):
+        return []
+    if octet < 0 or octet > 255:
+        return []
+    digits = []
+    n = octet
+    if n == 0:
+        digits = [0]
+    while n > 0:
+        digits.append(n % 10)
+        n //= 10
+    digits.reverse()
+    events = []
+    for rep in range(BLINK_REPEATS):
+        if rep:
+            events.append((None, BLINK_REPEAT_GAP_MS))
+        for pos in range(len(digits)):
+            if pos:
+                events.append((None, BLINK_DIGIT_GAP_MS))
+            color = BLINK_COLORS[pos % len(BLINK_COLORS)]
+            d = digits[pos]
+            if d == 0:
+                events.append((color, BLINK_ZERO_MS))
+            else:
+                for k in range(d):
+                    if k:
+                        events.append((None, BLINK_GAP_MS))
+                    events.append((color, BLINK_ON_MS))
+            events.append((None, BLINK_GAP_MS))
+    return events
+
+
+def blink_ip(strip, ip, count):
+    """Play the blink code for `ip` on LED BLINK_LED_INDEX. main()
+    calls this once per boot - after the join, before the display
+    loop starts, while the strip is still dark - so it belongs to
+    boot joins only (power-up, the post-setup reboot, a service
+    restart); nothing in the running loop calls it, and a mid-run
+    reconnect stays silent. The LED is an ordinary strip position
+    driven through the strip's own show(), so the colours come out
+    true. Never raises: a map that cannot speak its address still
+    has to show the weather."""
+    try:
+        if not ip or ip == "0.0.0.0" or count <= 0:
+            return
+        events = _blink_schedule(ip)
+        if not events:
+            return
+        idx = BLINK_LED_INDEX
+        if idx >= count:
+            idx = 0
+        dark = [OFF] * count
+        for color, ms in events:
+            frame = list(dark)
+            if color is not None:
+                frame[idx] = color
+            strip.show(frame, BLINK_BRIGHTNESS)
+            time.sleep(ms / 1000.0)
+        strip.show(dark, BLINK_BRIGHTNESS)
+        log.info("blink code: admin page is http://%s:5000 "
+                 "(last octet blinked on LED %d)", ip, idx + 1)
+    except Exception as e:
+        log.warning("blink code failed: %s", e)
+
+
+# --------------------------------------------------------------------------
 # Strip drivers
 # --------------------------------------------------------------------------
 class PiStrip:
@@ -547,6 +686,18 @@ def main():
     if args.once:
         run_once(strip, layout, cfg, builder=load_builder())
         return
+
+    # Boot joins only: once the network is up, say where the admin
+    # page lives - in light, on LED 0, before the first weather
+    # frame (see the blink-code block above). The loop below never
+    # calls this, so a mid-run reconnect stays silent. No network
+    # within the wait just means no announcement, never a delay of
+    # the weather beyond it.
+    ip = wait_for_ip()
+    if ip:
+        blink_ip(strip, ip, len(layout))
+    else:
+        log.info("no network at boot - skipping the blink code")
 
     metars, last_fetch = {}, 0.0
     layout_mtime = None

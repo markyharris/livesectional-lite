@@ -105,8 +105,15 @@ changed. There are no other wipes.
 
 Running more than one map? The admin page also takes an optional
 **map name**, shown in the page header and the browser tab so maps
-stay easy to tell apart; the status box shows the Pi's hostname and
-IP address. The status box also flags **"Update available"** when
+stay easy to tell apart; the status box shows both of the page's
+addresses — the Pi's current IP and its `.local` name — read live
+each time the page loads. And a strip map has no screen, so at
+every boot, before the weather appears, the first LED **blinks the
+last part of the Pi's IP address**, digit by digit (white, amber,
+violet by digit position; one long blink means 0; three repeats) —
+the map says where its admin page lives, in light. The HOWTO's
+one-time naming step gives the page a permanent address
+(`http://metar-lite.local:5000`). The status box also flags **"Update available"** when
 the Pi's copy is behind the GitHub repository (checked hourly);
 its **Update now** button pulls and restarts both services itself,
 and the box prints the manual commands too.

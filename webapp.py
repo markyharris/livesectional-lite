@@ -96,7 +96,11 @@ PAGE = """<!doctype html>
      <span title="MVFR" style="color:#0066ff;font-size:1.6em;vertical-align:-0.12em">&#9679;</span> <span id="st-mvfr">{{ status.counts.MVFR }}</span>
      <span title="IFR" style="color:#ff0000;font-size:1.6em;vertical-align:-0.12em">&#9679;</span> <span id="st-ifr">{{ status.counts.IFR }}</span>
      <span title="LIFR" style="color:#e600e6;font-size:1.6em;vertical-align:-0.12em">&#9679;</span> <span id="st-lifr">{{ status.counts.LIFR }}</span></p>
-  <p>Pi: <strong>{{ host_name }}</strong>{% if host_ip %} &middot; {{ host_ip }}{% endif %}</p>
+  <p>Admin page:{% if host_ip %} <strong>http://{{ host_ip }}:5000</strong>{% endif %}{% if host_name %} &middot; <strong>http://{{ host_name }}.local:5000</strong>{% endif %}</p>
+  <p style="color:#555;margin:0.2em 0 0">This page has two addresses - the
+     Pi's current IP and its .local name (Pi: <strong>{{ host_name }}</strong>).
+     Reached it by one? The other is the one to write down. Both are read
+     live each time the page loads, so the IP shown is never stale.</p>
   <div id="st-update" style="{% if not update_behind and not update_error and not update_failed %}display:none;{% endif %}color:#8a6d00;background:#fff3cd;padding:0.4em 0.6em;border-radius:4px">
   <p style="margin:0.2em 0">Update available: <strong id="st-behind">{{ update_behind }}</strong> new commit(s) on GitHub.</p>
   <form method="post" onsubmit="return confirm('Update now? The Pi will pull the new code and restart both map services; this page reloads itself when the update is done.')">

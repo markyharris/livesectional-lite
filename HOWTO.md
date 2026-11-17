@@ -348,18 +348,65 @@ you unplug/replug its power. There is no remote wake-up.
 
 ---
 
+## A permanent address for the admin page (one-time)
+
+Out of the box the admin page answers to the Pi's factory name,
+`http://raspberrypi.local:5000`. That name stops being helpful the
+day a second Pi joins the network, and it means nothing once the
+map is gifted to someone else. Give the map its own permanent name
+instead — one-time, on the Pi:
+
+```bash
+sudo hostnamectl set-hostname metar-lite
+sudo sed -i 's/^127\.0\.1\.1.*/127.0.1.1\tmetar-lite/' /etc/hosts
+sudo systemctl enable --now avahi-daemon
+sudo reboot
+```
+
+The third command starts **avahi-daemon**, the mDNS responder that
+makes `.local` names work. It ships with Raspberry Pi OS (it's how
+`raspberrypi.local` already works), so the command normally just
+confirms it's running. After the reboot, the admin page is at
+**http://metar-lite.local:5000** from any computer or phone on the
+same network, whatever IP address the router hands the Pi — the
+name never changes, even if the address does. (Running several
+maps? Give each its own name in place of `metar-lite`; the admin
+page always shows the name and address this Pi actually has.)
+
+Watch the map as it comes back up from that reboot: before the
+weather appears, the first LED blinks the last part of the Pi's IP
+address — that's the map's **blink code** introducing itself (see
+"Using the admin page", below). Two more ways the map tells you
+where it lives, no setup needed:
+
+- **The status box** at the top of the admin page shows both of the
+  page's addresses — the current IP and the `.local` name — read
+  live each time the page loads. Reached the page by one address?
+  The other is the one to write down.
+- **The blink code:** at every boot, once the Pi has joined the
+  network and before the weather appears, the first LED blinks the
+  last part of the Pi's IP address, digit by digit. Count the
+  blinks: white is the first digit, amber the second, violet the
+  third, and one long blink means 0. The sequence repeats three
+  times, then the LED goes back to weather duty. So a map at
+  192.168.87.24 blinks white twice, pauses, then amber four times —
+  the first three numbers are your own network's; the map speaks
+  the part that changes.
+
 ## Using the admin page
 
-`http://raspberrypi.local:5000` — **no login; home network only. Never
-port-forward it to the internet.**
+`http://metar-lite.local:5000` once you've done the one-time naming
+step above (`http://raspberrypi.local:5000` before it) — **no
+login; home network only. Never port-forward it to the internet.**
 
 - **Status box:** whether the map is on, when the last fetch happened
   (shown readably, e.g. "Saturday Oct 24th at 9:55 am"), how many
   stations are reporting, and one **"On the map"** line: four colored
   dots — green, blue, red, magenta — each followed by the number of
   LEDs currently lit in that color (the dots' tooltips name the
-  categories: VFR, MVFR, IFR, LIFR). A **Pi** line at the bottom shows
-  the Pi's hostname and IP address.
+  categories: VFR, MVFR, IFR, LIFR). An **Admin page** line shows
+  both of this page's addresses — the Pi's current IP and its
+  .local name — read live each time the page loads.
 - **Collapsible sections:** the Map Builder, Power, Settings and
   Stations sections start closed — click a section's header to open it (the
   status box always stays visible). The page remembers, in this
