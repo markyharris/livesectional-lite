@@ -14,9 +14,17 @@
 # lookup stubbed, and both of its addresses - the current IP and the
 # .local name, read live at serve time - must be on it.
 #
+# Part C, the admin-page design rule (Nov 16, 2026; painter clock
+# v24 is the reference): the project icon is the tab's favicon and
+# sits beside the title, the sections carry their accent colours,
+# the bounded settings are sliders with live readouts, and every
+# action lands back on the admin page - posts redirect here (the
+# settings save with its "Settings saved." note), and the reboot
+# page reloads itself into this page once the Pi answers again.
+#
 # Run from the project root:  python3 test_address.py
-# (Part B needs Flask, from requirements.txt; without it those
-# checks are skipped, not failed.)
+# (Parts B and C need Flask, from requirements.txt; without it
+# those checks are skipped, not failed.)
 # Exits 0 when every check passes, 1 otherwise.
 
 import inspect
@@ -172,6 +180,64 @@ if webapp is not None:
           "http://192.168.87.50:5000" in _html)
     check("admin page: shows the full admin URL at the .local name",
           "http://metar-lite.local:5000" in _html)
+
+# ---------------------------------------------------------------------------
+# Part C - the admin-page design rule (Nov 16, 2026)
+# ---------------------------------------------------------------------------
+if webapp is not None:
+    import os
+    import tempfile
+
+    check("design: the tab favicon is the project icon (SVG)",
+          'rel="icon"' in _html and "image/svg+xml" in _html
+          and "data:image/svg+xml" in _html)
+    check("design: the same icon sits beside the title",
+          _html.count("<svg") >= 1 and "LiveSectional Lite" in _html)
+    _fav = webapp.app.test_client().get("/favicon.ico")
+    check("design: /favicon.ico serves the same SVG icon",
+          _fav.status_code == 200
+          and _fav.mimetype == "image/svg+xml"
+          and _fav.get_data(as_text=True).startswith("<svg"))
+    for _sec in ("sec-builder", "sec-power", "sec-settings",
+                 "sec-stations"):
+        check("design: section %s present" % _sec,
+              'id="%s"' % _sec in _html)
+    check("design: every section carries its accent tint",
+          all(t in _html for t in
+              ("#e9f1fd", "#e2f5f7", "#fdeaea", "#e7f6ec", "#e9e4f5")))
+    check("design: brightness is a slider with a live readout",
+          'type="range"' in _html and 'id="brightness"' in _html
+          and 'id="bval"' in _html and "oninput" in _html)
+    check("design: night brightness is a slider with a live readout",
+          'id="night_brightness"' in _html and 'id="nbval"' in _html)
+
+    # Actions land back on the admin page. The posts run against
+    # throwaway config/builder files, never the real ones.
+    _tmp = tempfile.mkdtemp()
+    webapp.CONFIG_FILE = os.path.join(_tmp, "config.json")
+    webapp.BUILDER_FILE = os.path.join(_tmp, "builder.json")
+    _client = webapp.app.test_client()
+    _r = _client.post("/", data={"brightness": "70",
+                                 "night_brightness": "20",
+                                 "night_start": "22:00",
+                                 "night_end": "06:00",
+                                 "map_name": ""})
+    check("design: settings save redirects back to the admin page",
+          _r.status_code == 302 and "saved=1" in _r.headers["Location"])
+    _saved_html = _client.get("/?saved=1").get_data(as_text=True)
+    check("design: the saved page shows the note and the new value",
+          "Settings saved." in _saved_html
+          and 'value="70"' in _saved_html)
+    _r = _client.post("/", data={"builder_toggle": "1"})
+    check("design: a builder action redirects back to the admin page",
+          _r.status_code == 302 and _r.headers["Location"] == "/")
+    # The reboot page itself can't be posted to here (it needs the
+    # Pi's passwordless sudo), so assert its shape at the source:
+    # gated on reboot, polling the status endpoint, landing on /.
+    check("design: the reboot page reloads itself into the admin page",
+          'kind == "reboot"' in webapp.POWER_PAGE
+          and "/api/status" in webapp.POWER_PAGE
+          and 'location.href = "/"' in webapp.POWER_PAGE)
 
 print()
 if FAILED:

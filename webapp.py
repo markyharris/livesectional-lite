@@ -9,10 +9,18 @@ config.json; the display loop (metar_lite.py) re-reads it every cycle
 and picks up the changes. Builder edits write the airports file and
 builder.json, which the display loop also picks up live.
 
+The page follows the standing admin-page design rule (Nov 16,
+2026, painter clock v24 is the reference): one project icon is
+both the browser tab's favicon and the mark beside the title;
+each section carries its own accent colour; the bounded numeric
+settings are sliders with live readouts; and every action lands
+back on this page - posts redirect here with a status note, and
+the reboot/update pages reload themselves into this page once
+the Pi answers again.
+
 There is deliberately NO login - run this on your LAN only.
 """
 
-import base64
 import json
 import os
 import re
@@ -47,7 +55,7 @@ app = Flask(__name__)
 
 PAGE = """<!doctype html>
 <title>{% if cfg.map_name %}{{ cfg.map_name }} - {% endif %}LiveSectional Lite - Admin</title>
-<link rel="icon" type="image/png" href="data:image/png;base64,{{ favicon_b64 }}">
+<link rel="icon" type="image/svg+xml" href="{{ icon_uri }}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   body { font-family: sans-serif; max-width: 34em; margin: 2em auto; padding: 0 1em; }
@@ -58,7 +66,23 @@ PAGE = """<!doctype html>
   .status { background: #f0f0f0; padding: 0.8em 1em; border-radius: 6px; }
   .saved { color: green; }
   hr { border: none; border-top: 1px solid #ccc; margin: 1.8em 0 0; }
-  details.section { margin: 0.2em 0; }
+  /* Section accent colours (standing design rule, Nov 16 2026):
+     a pastel tint per section and a matching darker heading, in
+     the Visual Logbook / painter-clock v24 palette. The sections
+     stay <details> - the collapse behaviour and the remembered
+     open state are existing behaviour, only the dress is new. */
+  .sec-status { background: #e9f1fd; }
+  details.section { margin: 0.2em 0; padding: 0.1em 0.9em 0.9em;
+                    border-radius: 6px; }
+  #sec-builder { background: #e2f5f7; }
+  #sec-builder summary h2 { color: #0f5e63; }
+  #sec-power { background: #fdeaea; }
+  #sec-power summary h2 { color: #8c2f2f; }
+  #sec-settings { background: #e7f6ec; }
+  #sec-settings summary h2 { color: #1e6b34; }
+  #sec-stations { background: #e9e4f5; }
+  #sec-stations summary h2 { color: #4b3a75; }
+  .hdricon svg { width: 52px; height: 52px; display: block; }
   summary { cursor: pointer; }
   .sta-grid { display: flex; flex-wrap: wrap; gap: 0.4em 1.1em; margin-top: 0.6em; }
   .sta .dot { display: inline-block; width: 0.72em; height: 0.72em;
@@ -82,11 +106,10 @@ PAGE = """<!doctype html>
   }
 </style>
 <div style="display:flex;align-items:center;gap:0.6em;margin-bottom:0.8em">
-  <img src="data:image/png;base64,{{ favicon_b64 }}" alt="" width="52" height="52"
-       style="border-radius:8px">
+  <span class="hdricon">{{ icon_svg | safe }}</span>
   <h1 style="margin:0">LiveSectional Lite{% if cfg.map_name %} &mdash; {{ cfg.map_name }}{% endif %}</h1>
 </div>
-<div class="status">
+<div class="status sec-status">
   <p>Map is <strong id="st-map">{{ "ON" if cfg.map_on else "OFF" }}</strong></p>
   <p>Last fetch: <strong id="st-fetch">{{ status.last_fetch_pretty or status.last_fetch or "never" }}</strong></p>
   <p>Stations reporting: <strong id="st-reporting">{{ status.stations_reporting }}</strong>
@@ -854,6 +877,22 @@ POWER_PAGE = """<!doctype html>
 <body style="font-family:sans-serif;max-width:34em;margin:2em auto;padding:0 1em">
 <h1>{{ heading }}</h1>
 <p>{{ detail }}</p>
+{% if kind == "reboot" %}
+<p><a href="/">Reload now</a></p>
+<script>
+// A restart-style action ends back on the admin page (standing
+// design rule): poll until the Pi answers again, then go there.
+// Shutdown gets no script - the Pi stays off, so there is no
+// admin page to come back to.
+setTimeout(function () {
+  var iv = setInterval(function () {
+    fetch("/api/status").then(function (r) {
+      if (r.ok) { clearInterval(iv); location.href = "/"; }
+    }).catch(function () { /* not back yet - keep waiting */ });
+  }, 5000);
+}, 10000);
+</script>
+{% endif %}
 </body>"""
 
 
@@ -875,15 +914,37 @@ def api_status():
     })
 
 
-# Tab icon: a scrap of sectional chart with a green (VFR) LED lit at the
-# airport. Embedded as base64 so the app stays a single file; the same
-# bytes are also served at /favicon.ico for browsers that ask there.
-FAVICON_B64 = "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"
+# The project icon: a scrap of sectional chart - cream chart
+# paper, graticule lines, a magenta airport ring - with LED dots
+# in the flight-category colours, the green VFR one lit at the
+# airport in the middle. One SVG literal serves both spots (the
+# painter-clock v24 pattern): inline beside the title in the
+# header, and as the tab's favicon via a data URI derived from
+# it - so the pair can never drift and the app stays one file.
+# The same SVG is also served at /favicon.ico for browsers
+# that ask there.
+ICON_SVG = ("<svg xmlns='http://www.w3.org/2000/svg' "
+            "viewBox='0 0 64 64'>"
+            "<rect x='3' y='3' width='58' height='58' rx='10' "
+            "fill='#f6efdc' stroke='#8a7a52' stroke-width='2.5'/>"
+            "<path d='M3 24h58M3 42h58M24 3v58M42 3v58' "
+            "stroke='#b9c8d4' stroke-width='2'/>"
+            "<circle cx='33' cy='33' r='11' fill='none' "
+            "stroke='#c026d3' stroke-width='3.5'/>"
+            "<circle cx='14' cy='14' r='4.5' fill='#0066ff'/>"
+            "<circle cx='52' cy='14' r='4.5' fill='#ff0000'/>"
+            "<circle cx='14' cy='52' r='4.5' fill='#e600e6'/>"
+            "<circle cx='52' cy='52' r='4.5' fill='#0066ff'/>"
+            "<circle cx='33' cy='33' r='5.5' fill='#00b050'/>"
+            "</svg>")
+ICON_URI = ("data:image/svg+xml;utf8,"
+            + ICON_SVG.replace("#", "%23").replace("<", "%3C")
+            .replace(">", "%3E"))
 
 
 @app.route("/favicon.ico")
 def favicon():
-    return Response(base64.b64decode(FAVICON_B64), mimetype="image/png")
+    return Response(ICON_SVG, mimetype="image/svg+xml")
 
 
 def render_page(cfg, saved=False, power_error=None, builder_error=None,
@@ -893,7 +954,8 @@ def render_page(cfg, saved=False, power_error=None, builder_error=None,
     disp_svc = _display_service_name()
     return render_template_string(
         PAGE, cfg=cfg, status=load_status(), saved=saved,
-        favicon_b64=FAVICON_B64, host_name=host_name, host_ip=host_ip,
+        icon_svg=ICON_SVG, icon_uri=ICON_URI,
+        host_name=host_name, host_ip=host_ip,
         update_behind=UPDATE_STATE["behind"],
         update_cmd_pull=f"cd {HERE} && git pull",
         update_cmd_restart=f"sudo systemctl restart {disp_svc} {web_svc}",
@@ -1003,8 +1065,9 @@ def index():
             if kind == "reboot":
                 heading, detail = ("Rebooting…",
                                    "The Pi is restarting. The map should "
-                                   "be back in about a minute; reload "
-                                   "this page then.")
+                                   "be back in about a minute; this page "
+                                   "reloads itself into the admin page "
+                                   "once the Pi answers again.")
             else:
                 heading, detail = ("Shutting down…",
                                    "The Pi is powering off. It will stay "
