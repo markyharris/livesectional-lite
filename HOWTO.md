@@ -411,7 +411,13 @@ login; home network only. Never port-forward it to the internet.**
   Stations sections start closed — click a section's header to open it (the
   status box always stays visible). The page remembers, in this
   browser, which sections you left open; a section also opens on its
-  own when it has something to show you, like a builder error.
+  own when it has something to show you, like a builder error. The
+  sections are colour-tinted, and the page carries its sectional-scrap
+  icon in the browser tab and beside the title. **Brightness** and
+  **Night brightness** (below) are sliders with live readouts, and
+  every action — Save, Update, Reboot — returns to this page itself;
+  a reboot brings the page back on its own once the Pi is up, as in
+  the Step 8 sequence above.
 - **Stations section:** every airport on the map, each with a dot in
   its current flight-category color (silver when the station hasn't
   reported). Hover or tap an airport ID to see its raw METAR. A filter
